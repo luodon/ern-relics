@@ -187,7 +187,7 @@ int main() {
                     "Changed regulation reused stale rules");
             require(ern::validation_reason(
                         active.validator().validate(0x80000000u | 1003002, base, context))
-                            .find("exclusion") != std::string::npos,
+                            .find("互斥") != std::string::npos,
                     "Active exclusion groups were ignored");
 
             for (const auto size : {std::size_t(0), std::size_t(1), std::size_t(15),
@@ -225,7 +225,7 @@ int main() {
             write(path, changed);
             context = context_for(ern::DlcState::Present);
             require(std::holds_alternative<ern::UnknownRules>(context) &&
-                        active.diagnostics().error.find("Restart") != std::string::npos &&
+                        active.diagnostics().error.find("请重启") != std::string::npos &&
                         active.source_hash() == locked_hash &&
                         std::holds_alternative<ern::Obtainable>(active.validator().validate(
                             0x80000000u | 1003002, base, ern::DlcState::Absent)),
@@ -234,7 +234,7 @@ int main() {
             context = context_for(ern::DlcState::Present);
             require(std::holds_alternative<ern::UnknownRules>(context) &&
                         active.diagnostics().detected_hash.empty() &&
-                        active.diagnostics().error.find("Cannot read") != std::string::npos,
+                        active.diagnostics().error.find("无法读取") != std::string::npos,
                     "Missing files were misreported as hash mismatches");
             write(path, original);
             {
@@ -254,7 +254,7 @@ int main() {
                 require(std::holds_alternative<ern::UnknownRules>(
                             watched.context(ern::DlcState::Absent)) &&
                             watched.source_hash() == locked_hash &&
-                            watched.diagnostics().error.find("Restart") != std::string::npos,
+                            watched.diagnostics().error.find("请重启") != std::string::npos,
                         "Background observations replaced the character's bound rules");
             }
             std::filesystem::remove(path);

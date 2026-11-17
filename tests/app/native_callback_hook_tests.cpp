@@ -67,11 +67,11 @@ int main() {
         require(calls == 11 && read(original_address, code_after) && code_before == code_after,
                 "Dispatch did not call the original first or changed its protected code");
         readable = false;
-        require(hook.error() && hook.error()->find("Cannot read") != std::string::npos,
+        require(hook.error() && hook.error()->find("无法读取") != std::string::npos,
                 "An unreadable callback stayed available");
         readable = true;
         dispatch.replace(other);
-        require(hook.error() && hook.error()->find("replaced") != std::string::npos,
+        require(hook.error() && hook.error()->find("已被替换") != std::string::npos,
                 "A replaced callback stayed available");
         reinterpret_cast<Callback>(*dispatch.slot)(calls);
         require(calls == 111, "Hook health checking overwrote another owner's callback");
