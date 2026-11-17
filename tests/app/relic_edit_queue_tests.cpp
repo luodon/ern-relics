@@ -54,14 +54,13 @@ void native_capacity_rejection() {
         executed = true;
         return success(std::move(pending));
     });
-    require(
-        reads == 1 && rejected.reason == ern::EditRejectReason::EquipUnavailable &&
-            rejected.detail ==
-                "Relic controller check failed (controller.entry_count). Found 24. Expected 48." &&
-            diagnostics.summary().find("stage=preflight check=controller.entry_count") !=
-                std::string::npos &&
-            !queue.pending_roots() && !executed,
-        "A native capacity mismatch timed out or left an edit available to the callback");
+    require(reads == 1 && rejected.reason == ern::EditRejectReason::EquipUnavailable &&
+                rejected.detail ==
+                    "遗物控制器检查失败（controller.entry_count）。实际 24。预期 48。" &&
+                diagnostics.summary().find("stage=preflight check=controller.entry_count") !=
+                    std::string::npos &&
+                !queue.pending_roots() && !executed,
+            "A native capacity mismatch timed out or left an edit available to the callback");
 }
 
 void availability_exception_cancels() {

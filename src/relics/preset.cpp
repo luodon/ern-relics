@@ -9,11 +9,11 @@ PresetStage stage_preset(const Preset &preset, const EquippedRelics &equipped,
     PresetStage result{};
     for (std::size_t i = 0; i < preset.slots.size(); ++i) {
         if (!preset.slots[i]) {
-            result.skipped[i] = "No effect template in this preset slot.";
+            result.skipped[i] = "该预设槽位中没有可用的词条模板。";
             continue;
         }
         if (!equipped.slots[i]) {
-            result.skipped[i] = "No relic equipped.";
+            result.skipped[i] = "未装备遗物。";
             continue;
         }
         const auto item_id = equipped.slots[i]->item_id;

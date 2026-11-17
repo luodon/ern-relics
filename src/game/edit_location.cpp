@@ -36,11 +36,11 @@ const char *location_lock_reason(EditLocation location) {
     case EditLocation::RoundtableHold:
         return nullptr;
     case EditLocation::OutsideRoundtable:
-        return "Relic editing is only available in Roundtable Hold. Return there to make changes.";
+        return "遗物编辑仅在圆桌厅堂可用，请返回圆桌厅堂进行修改。";
     case EditLocation::Unavailable:
     case EditLocation::NotLoaded:
-        return "Relic editing is locked until your character is loaded in Roundtable Hold.";
+        return "在角色于圆桌厅堂加载完成之前，遗物编辑已锁定。";
     }
-    return "Cannot confirm that your character is in Roundtable Hold.";
+    return "无法确认角色是否位于圆桌厅堂。";
 }
 } // namespace ern

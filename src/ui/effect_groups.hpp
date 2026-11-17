@@ -25,27 +25,27 @@ inline constexpr std::array effect_groups{
 inline const char *effect_group_name(EffectGroup group) {
     switch (group) {
     case EffectGroup::Attributes:
-        return "Attributes";
+        return "属性";
     case EffectGroup::Attack:
-        return "Attack";
+        return "攻击";
     case EffectGroup::Recovery:
-        return "Recovery";
+        return "恢复";
     case EffectGroup::Defense:
-        return "Defense";
+        return "防御";
     case EffectGroup::Discovery:
-        return "Discovery";
+        return "探索";
     case EffectGroup::Skills:
-        return "Skills & spells";
+        return "战技与法术";
     case EffectGroup::Character:
-        return "Character";
+        return "角色";
     case EffectGroup::Other:
-        return "Other";
+        return "其他";
     }
-    return "Other";
+    return "其他";
 }
 
 inline EffectGroup effect_group(std::string_view description) {
-    if (description.starts_with('['))
+    if (description.starts_with('[') || description.starts_with("【"))
         return EffectGroup::Character;
     std::string text(description);
     std::transform(text.begin(), text.end(), text.begin(),
@@ -53,25 +53,23 @@ inline EffectGroup effect_group(std::string_view description) {
     const auto has = [&text](std::string_view word) {
         return text.find(word) != std::string::npos;
     };
-    for (const auto stat : {"vigor +", "mind +", "endurance +", "strength +", "dexterity +",
-                            "intelligence +", "faith +", "arcane +"})
+    for (const auto stat :
+         {"生命力+", "集中力+", "耐力+", "力气+", "灵巧+", "智力+", "信仰+", "感应+", "强韧度+"})
         if (text.starts_with(stat))
             return EffectGroup::Attributes;
-    if (has("discover") || has("rune acquisition") || has("earn runes"))
+    if (has("潜在能力") || has("观察力") || has("宝藏") || has("获得的卢恩"))
         return EffectGroup::Discovery;
-    if (has("character skill") || has("ultimate art") || has("art gauge"))
+    if (has("技艺") || has("绝招"))
         return EffectGroup::Character;
-    if (has("incantation") || has("sorcer") || has("spell") || has("changes compatible armament") ||
-        has("skill attack"))
+    if (has("魔法") || has("祷告") || has("战技") || has("法术"))
         return EffectGroup::Skills;
-    if (has("restor") || has("recover") || has("heal") || has("flask"))
+    if (has("恢复") || has("回复") || has("圣杯瓶"))
         return EffectGroup::Recovery;
-    if (has("resistance") || has("damage negation") || has("damage reduction") ||
-        has("damage taken") || has("guarding") || has("maximum hp") || has("max hp") ||
-        has("max fp") || has("max stamina"))
+    if (has("血量上限") || has("专注值上限") || has("精力上限") || has("减伤率") || has("抵抗力") ||
+        has("防御") || has("强韧度"))
         return EffectGroup::Defense;
-    if (has("attack") || has("damage") || has("critical hit") || has("status ailment") ||
-        has("blood loss") || has("frostbite") || has("poison"))
+    if (has("攻击") || has("伤害") || has("致命一击") || has("异常状态") || has("出血") ||
+        has("冻伤") || has("中毒") || has("量表") || has("损伤"))
         return EffectGroup::Attack;
     return EffectGroup::Other;
 }

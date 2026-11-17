@@ -10,7 +10,7 @@ struct EditorView {
     std::shared_ptr<const RelicValidator> rules;
     std::shared_ptr<const GameAssets> resources;
     std::shared_ptr<const SystemFonts> fonts;
-    Inspection inspection = InspectionMessage{"Waiting for the game to load."};
+    Inspection inspection = InspectionMessage{"正在等待游戏加载。"};
     Drafts drafts;
     DraftReview review;
     RuleContext context;

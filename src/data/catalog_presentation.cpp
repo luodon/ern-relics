@@ -21,23 +21,23 @@ std::vector<IconKey> requested_icons(const RelicValidator &rules) {
 
 std::string CatalogPresentation::name(const RelicInfo *item) const {
     if (!item)
-        return "Unrecognized relic";
+        return "未识别的遗物";
     const auto found = assets_.item_names.find(item->id);
     return found != assets_.item_names.end() && !found->second.empty()
                ? found->second
-               : "Relic ID " + std::to_string(item->id);
+               : "遗物 ID " + std::to_string(item->id);
 }
 
 std::string CatalogPresentation::describe(std::uint32_t id) const {
     if (id == UINT32_MAX)
-        return "Empty effect slot";
+        return "空词条槽位";
     const auto *effect = rules_.effects().find(id);
     if (!effect)
-        return "Unknown effect. ID " + std::to_string(id);
+        return "未知词条，ID " + std::to_string(id);
     const auto found = assets_.effect_names.find(effect->text_id);
     return found != assets_.effect_names.end() && !found->second.empty()
                ? found->second
-               : "Effect ID " + std::to_string(id);
+               : "词条 ID " + std::to_string(id);
 }
 
 std::optional<unsigned int> CatalogPresentation::cell(IconKey key) const {

@@ -9,62 +9,60 @@ inline std::string rejection_message(const EditRejected &rejected) {
         return rejected.detail;
     switch (rejected.reason) {
     case EditRejectReason::NotAtRoundtable:
-        return "Relic editing is only available in Roundtable Hold. Return there and wait for loading to finish.";
+        return "仅在圆桌厅堂内可编辑遗物。请返回圆桌厅堂并等待加载完成。";
     case EditRejectReason::Stale:
-        return "Relic changed in game. Reload it before applying changes.";
+        return "遗物已在游戏内更改。应用更改前请重新读取该遗物。";
     case EditRejectReason::Locked:
-        return "This relic is read only. Its effects cannot be modified.";
+        return "该遗物为只读，无法修改其词条。";
     case EditRejectReason::Invalid:
-        return "The final relic check failed. No effects were changed.";
+        return "遗物最终校验失败，未更改任何词条。";
     case EditRejectReason::Unreadable:
-        return "Cannot resolve the equipped relic. Wait until loading finishes, then refresh.";
+        return "无法解析已装备的遗物。请等待加载完成后刷新。";
     case EditRejectReason::RulesUnavailable:
-        return "Relic roll data is unavailable.";
+        return "遗物抽取数据不可用。";
     case EditRejectReason::JournalOpen:
-        return "Cannot open the backup journal. No effects were changed.";
+        return "无法打开备份日志，未更改任何词条。";
     case EditRejectReason::JournalWrite:
-        return "Cannot write the backup journal. No effects were changed.";
+        return "无法写入备份日志，未更改任何词条。";
     case EditRejectReason::Unchanged:
-        return "No effects have changed.";
+        return "没有词条发生更改。";
     case EditRejectReason::EquipUnavailable:
-        return "The game cannot unequip this relic yet. No effects were changed. Try again after loading finishes.";
+        return "游戏尚无法卸下该遗物，未更改任何词条。请在加载完成后重试。";
     }
-    return "Unknown edit rejection.";
+    return "未知的编辑拒绝原因。";
 }
 
 inline std::string failure_message(const EditFailure &failure) {
     if (const auto *rejected = std::get_if<EditRejected>(&failure))
         return rejection_message(*rejected);
     const auto failed = std::get<WriteFailure>(failure);
-    const char *reason = failed.stage == WriteStage::Write ? "The memory write failed. "
-                         : failed.stage == WriteStage::Equipment
-                             ? "The relic equip cycle failed. "
-                             : "The change could not be verified. ";
-    return std::string(reason) +
-           (failed.restoration == Restoration::Verified
-                ? "The original effects were restored."
-                : "Restoration could not be verified. Check the relic before continuing.");
+    const char *reason = failed.stage == WriteStage::Write       ? "内存写入失败。"
+                         : failed.stage == WriteStage::Equipment ? "遗物装备切换失败。"
+                                                                 : "无法验证更改结果。";
+    return std::string(reason) + (failed.restoration == Restoration::Verified
+                                      ? "原有词条已恢复。"
+                                      : "无法验证恢复结果。请先检查该遗物再继续。");
 }
 
 inline std::string slot_failure_message(const SlotFailure &failure) {
-    return "Slot " + std::to_string(failure.slot + 1) + ": " + failure_message(failure.failure);
+    return "槽位 " + std::to_string(failure.slot + 1) + "：" + failure_message(failure.failure);
 }
 
 inline std::string preset_store_message(PresetStoreError error) {
     switch (error) {
     case PresetStoreError::InvalidName:
-        return "Use 1-32 letters, numbers, spaces, underscores, or hyphens. Start and end without spaces, and avoid Windows device names such as CON, NUL, COM1, or LPT1.";
+        return "请使用 1-32 个字母、数字、空格、下划线或连字符。首尾不能为空格，并避免使用 CON、NUL、COM1、LPT1 等 Windows 设备名。";
     case PresetStoreError::AlreadyExists:
-        return "A preset with this name already exists. Choose Replace preset to overwrite it, or use another name.";
+        return "同名预设已存在。请选择“替换预设”覆盖它，或改用其他名称。";
     case PresetStoreError::Read:
-        return "Could not read the presets folder.";
+        return "无法读取预设文件夹。";
     case PresetStoreError::CreateFolder:
-        return "Could not create the presets folder.";
+        return "无法创建预设文件夹。";
     case PresetStoreError::Write:
-        return "Could not save the preset.";
+        return "无法保存预设。";
     case PresetStoreError::Delete:
-        return "Could not delete the preset.";
+        return "无法删除预设。";
     }
-    return "Unknown preset error.";
+    return "未知的预设错误。";
 }
 } // namespace ern::ui

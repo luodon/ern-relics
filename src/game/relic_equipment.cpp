@@ -90,11 +90,11 @@ std::optional<RelicEquipFailure> check_cache_capacity(const MemoryRead &read, Ad
 std::optional<std::string> relic_capacity_error(const RelicEquipFailure &failure) {
     if (!failure.capacity_check)
         return {};
-    auto detail = "Relic controller check failed (" + std::string(failure.check) + ").";
+    auto detail = "遗物控制器检查失败（" + std::string(failure.check) + "）。";
     if (failure.actual)
-        detail += " Found " + std::to_string(*failure.actual) + ".";
+        detail += "实际 " + std::to_string(*failure.actual) + "。";
     if (failure.expected)
-        detail += " Expected " + std::to_string(*failure.expected) + ".";
+        detail += "预期 " + std::to_string(*failure.expected) + "。";
     return detail;
 }
 

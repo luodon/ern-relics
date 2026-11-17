@@ -153,10 +153,9 @@ int main() {
                     "Active fingerprint or resolved Unicode path was lost");
             require(ern::CatalogPresentation{active.validator(), {}}.name(
                         active.validator().items().find(0x80000000u | 1003002)) ==
-                        "Relic ID 1003002",
+                        "遗物 ID 1003002",
                     "Unknown item did not receive a numeric label");
-            require(ern::CatalogPresentation{active.validator(), {}}.describe(101) ==
-                        "Effect ID 101",
+            require(ern::CatalogPresentation{active.validator(), {}}.describe(101) == "词条 ID 101",
                     "New mod effects need numeric labels");
             const ern::Effects base{{101, UINT32_MAX}, {201, UINT32_MAX}, {301, UINT32_MAX}},
                 dlc{{102, UINT32_MAX}, {202, UINT32_MAX}, {302, UINT32_MAX}};

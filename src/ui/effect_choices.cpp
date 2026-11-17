@@ -35,10 +35,9 @@ PreparedEffectChoices prepare_effect_choices(const EffectChoiceInputs &inputs) {
         if (available && result.deep && !result.curses &&
             std::holds_alternative<Impossible>(
                 rules.validate_pair(candidate.effect->id, UINT32_MAX, inputs.context)))
-            tag = "Curse required";
+            tag = "需要诅咒";
         else if (!available)
-            tag = std::holds_alternative<UnknownRules>(validation) ? "Rules unavailable"
-                                                                   : "Unavailable";
+            tag = std::holds_alternative<UnknownRules>(validation) ? "规则不可用" : "不可用";
         const auto group = effect_group(candidate.description);
         result.groups[static_cast<std::size_t>(group)].push_back(
             {candidate.effect->id, std::move(candidate.description), std::move(validation),

@@ -28,26 +28,19 @@ void check_bounds(ern::UiRect editor, ern::UiRect field, float desired_height, f
 
 void effect_groups() {
     using enum ern::EffectGroup;
-    require(ern::effect_group("Arcane +3") == Attributes, "Attribute effect was not grouped");
-    require(ern::effect_group("Improved Great Hammer Attack Power") == Attack,
-            "Weapon attack was not grouped");
-    require(ern::effect_group("FP Restoration upon Great Hammer Attacks") == Recovery,
+    require(ern::effect_group("感应+3") == Attributes, "Attribute effect was not grouped");
+    require(ern::effect_group("大锤攻击力提升") == Attack, "Weapon attack was not grouped");
+    require(ern::effect_group("大锤攻击时恢复专注值") == Recovery,
             "Recovery was confused with attack");
-    require(ern::effect_group("Dormant Power Helps Discover Great Hammers") == Discovery,
-            "Discovery was not grouped");
-    require(ern::effect_group("Improved Blood Loss Resistance") == Defense,
-            "Resistance was confused with attack");
-    require(ern::effect_group(
-                "Changes compatible armament's incantation to Beast Claw at start of expedition") ==
-                Skills,
+    require(ern::effect_group("潜在能力有助于发现大锤") == Discovery, "Discovery was not grouped");
+    require(ern::effect_group("出血抵抗力提升") == Defense, "Resistance was confused with attack");
+    require(ern::effect_group("出击开始时将可搭配武器的祷告变为兽爪") == Skills,
             "Spell replacement was not grouped");
-    require(ern::effect_group("[Wylder] Art gauge greatly filled when ability is activated") ==
-                Character,
+    require(ern::effect_group("[Wylder] 发动能力时绝招量表大幅累积") == Character,
             "Character prefix was not grouped");
-    require(ern::effect_group("New unclassified effect") == Other,
-            "Unclassified effects disappeared");
-    require(ern::effect_group("fp restoration upon GREAT HAMMER attacks") == Recovery,
-            "Grouping is case sensitive");
+    require(ern::effect_group("未分类的新词条") == Other, "Unclassified effects disappeared");
+    require(ern::effect_group("大锤攻击后的恢复") == Recovery,
+            "Grouping missed a keyword inside the description");
 }
 
 void catalog_presentation() {
@@ -84,8 +77,8 @@ void catalog_presentation() {
     const auto &catalog = presentation;
     require(catalog.name(validator.items().find(0x800F4AE4)) == "Fixture random relic" &&
                 catalog.describe(11000) == "[Fixture] Character bonus" &&
-                catalog.describe(UINT32_MAX) == "Empty effect slot" &&
-                catalog.describe(0xFEFEFEFE).find("Unknown effect") != std::string::npos,
+                catalog.describe(UINT32_MAX) == "空词条槽位" &&
+                catalog.describe(0xFEFEFEFE).find("未知词条") != std::string::npos,
             "Display data or numeric fallbacks changed the catalogue labels");
     require(catalog.describe(7000402) == "Synthetic message selected by text ID",
             "Effect text was selected by effect ID instead of its active text ID");
@@ -124,10 +117,10 @@ void popup_geometry() {
 void recovery_messages() {
     require(ern::ui::failure_message(
                 ern::WriteFailure{ern::WriteStage::Write, ern::Restoration::Verified})
-                        .find("were restored") != std::string::npos &&
+                        .find("已恢复") != std::string::npos &&
                 ern::ui::failure_message(
                     ern::WriteFailure{ern::WriteStage::Write, ern::Restoration::Unconfirmed})
-                        .find("Check the relic") != std::string::npos,
+                        .find("检查该遗物") != std::string::npos,
             "Recovery messages do not distinguish verified and uncertain restoration");
 }
 

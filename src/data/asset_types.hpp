@@ -30,6 +30,7 @@ struct GameAssets {
 struct SystemFonts {
     std::vector<std::uint8_t> controls;
     std::vector<std::uint8_t> headings;
+    std::vector<std::uint8_t> cjk;
 };
 
 } // namespace ern

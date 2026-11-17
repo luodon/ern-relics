@@ -426,9 +426,8 @@ void controller_bitmap_capacity() {
         fixture.set_capacity(48);
         fixture.set_bitmap_sizes(scratch, live, storage);
         const auto result = fixture.commit();
-        const auto detail = "Relic controller check failed (" + std::string(check) + "). Found " +
-                            std::to_string(observed) + ". Expected " + std::to_string(expected) +
-                            ".";
+        const auto detail = "遗物控制器检查失败（" + std::string(check) + "）。实际 " +
+                            std::to_string(observed) + "。预期 " + std::to_string(expected) + "。";
         require(std::get<ern::EditRejected>(result).detail == detail &&
                     fixture.assigned_positions.empty() && fixture.refreshes == 0 &&
                     fixture.writes == 0,

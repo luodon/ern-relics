@@ -26,9 +26,9 @@ void preset_slot(const EditorView &rt, const Appearance &appearance, std::size_t
         appearance.portrait(rt.presentation(), info, position, art, !ready);
     else
         appearance.empty_portrait(rt.presentation(), deep, position, art);
-    const auto label = std::string(deep ? "Deep slot " : "Normal slot ") +
+    const auto label = std::string(deep ? "深层槽位 " : "普通槽位 ") +
                        std::to_string(index % effects_per_relic + 1);
-    const char *status = ready ? "Ready" : preset.slots[index] ? "Skipped" : "Omitted";
+    const char *status = ready ? "就绪" : preset.slots[index] ? "已跳过" : "已省略";
     const auto size = appearance.badge_size(status);
     const float right = position.x + ImGui::GetContentRegionAvail().x;
     const bool tag_hovered =
@@ -58,12 +58,11 @@ void preset_slot(const EditorView &rt, const Appearance &appearance, std::size_t
     draw->PopClipRect();
     ImGui::Dummy({ImGui::GetContentRegionAvail().x, art});
     if (tag_hovered) {
-        const auto reason = ready ? std::string("This template fits the equipped relic.")
-                            : !preset.slots[index]
-                                ? std::string("This slot was omitted from the preset.")
+        const auto reason = ready                  ? std::string("该模板适用于已装备的遗物。")
+                            : !preset.slots[index] ? std::string("该槽位未包含在预设中。")
                             : staged && !staged->skipped[index].empty()
                                 ? staged->skipped[index]
-                                : "No editable relic is equipped in this slot.";
+                                : "该槽位没有可编辑的已装备遗物。";
         ImGui::SetTooltip("%s", reason.c_str());
     }
     ImGui::SetCursorScreenPos({position.x, position.y + art + appearance.space(2)});
@@ -85,7 +84,7 @@ void preset_slot(const EditorView &rt, const Appearance &appearance, std::size_t
         }
     } else {
         ImGui::SetCursorScreenPos(effects_position);
-        ImGui::TextColored(muted, "Slot omitted");
+        ImGui::TextColored(muted, "槽位已省略");
     }
     ImGui::PopFont();
     ImGui::EndChild();
@@ -104,20 +103,20 @@ void delete_dialog(std::optional<EditorAction> &action, PresetBrowser &browser,
     if (ImGui::BeginPopupModal("Delete preset?", nullptr,
                                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
-        heading("Delete preset?", appearance.name_font);
+        heading("删除预设？", appearance.name_font);
         ImGui::Dummy({0, appearance.space(1)});
         ImGui::TextWrapped("%s", browser.pending_delete.c_str());
-        notice({"This cannot be undone."});
+        notice({"此操作无法撤销。"});
         ImGui::Dummy({0, appearance.space(2)});
         const float button_width = (ImGui::GetContentRegionAvail().x - appearance.space(2)) / 2;
-        if (button("Cancel", {button_width, appearance.space(9)}) ||
+        if (button("取消", {button_width, appearance.space(9)}) ||
             ImGui::IsKeyPressed(ImGuiKey_Escape)) {
             browser.pending_delete.clear();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine(0, appearance.space(2));
-        if (danger_button("Delete preset", {button_width, appearance.space(9)})) {
+        if (danger_button("删除预设", {button_width, appearance.space(9)})) {
             action = DeletePreset{browser.pending_delete};
             browser.pending_delete.clear();
             ImGui::CloseCurrentPopup();
@@ -139,14 +138,13 @@ void replace_dialog(std::optional<EditorAction> &action, PresetBrowser &browser,
     if (ImGui::BeginPopupModal("Replace preset?", nullptr,
                                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)) {
-        heading("Replace preset?", appearance.name_font);
+        heading("替换预设？", appearance.name_font);
         ImGui::Dummy({0, appearance.space(1)});
         ImGui::TextWrapped("%s", browser.pending_replace.c_str());
-        notice(
-            {"Replace its saved effects with the currently equipped effects. This cannot be undone."});
+        notice({"用当前已装备的词条替换其保存的词条。此操作无法撤销。"});
         ImGui::Dummy({0, appearance.space(2)});
         const float button_width = (ImGui::GetContentRegionAvail().x - appearance.space(2)) / 2;
-        if (button("Cancel", {button_width, appearance.space(9)}) ||
+        if (button("取消", {button_width, appearance.space(9)}) ||
             ImGui::IsKeyPressed(ImGuiKey_Escape)) {
             browser.pending_replace.clear();
             ImGui::CloseCurrentPopup();
@@ -154,7 +152,7 @@ void replace_dialog(std::optional<EditorAction> &action, PresetBrowser &browser,
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine(0, appearance.space(2));
         ImGui::BeginDisabled(!can_save);
-        if (danger_button("Replace preset", {button_width, appearance.space(9)})) {
+        if (danger_button("替换预设", {button_width, appearance.space(9)})) {
             action = SavePreset{browser.pending_replace, PresetSaveMode::Replace};
             browser.pending_replace.clear();
             ImGui::CloseCurrentPopup();
@@ -185,10 +183,10 @@ void draw_presets(const EditorView &rt, std::optional<EditorAction> &action, Pre
         ImGui::BeginChild("preset-search", {0, 0},
                           ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding);
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        if (ImGui::InputTextWithHint("##search", "Search presets...", browser.filter.InputBuf,
+        if (ImGui::InputTextWithHint("##search", "搜索预设…", browser.filter.InputBuf,
                                      sizeof(browser.filter.InputBuf)))
             browser.filter.Build();
-        ImGui::TextColored(muted, "Saved presets");
+        ImGui::TextColored(muted, "已保存的预设");
         ImGui::EndChild();
         ImGui::PopStyleVar();
         vertical_gap(0);
@@ -209,9 +207,7 @@ void draw_presets(const EditorView &rt, std::optional<EditorAction> &action, Pre
                                     [](const auto &slot) { return slot.has_value(); })
                     : 0;
             const auto subtitle =
-                entry.contents
-                    ? std::to_string(count) + (count == 1 ? " relic template" : " relic templates")
-                    : "Cannot read preset";
+                entry.contents ? std::to_string(count) + " 个遗物模板" : "无法读取预设";
             const auto name = elide_text(
                 entry.name.c_str(), std::max(appearance.space(5), width - appearance.space(5)));
             const auto name_ink = text_ink(name.c_str());
@@ -242,7 +238,7 @@ void draw_presets(const EditorView &rt, std::optional<EditorAction> &action, Pre
         ImGui::PopStyleVar();
         if (!visible) {
             const auto at = ImGui::GetCursorScreenPos(), available = ImGui::GetContentRegionAvail();
-            centered_text("No matching presets", {at.x, at.y, available.x, available.y}, nullptr, 0,
+            centered_text("没有匹配的预设", {at.x, at.y, available.x, available.y}, nullptr, 0,
                           muted);
         }
         ImGui::EndChild();
@@ -270,16 +266,16 @@ void draw_presets(const EditorView &rt, std::optional<EditorAction> &action, Pre
         heading(title.c_str(), appearance.name_font, ImGui::GetFrameHeight());
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - buttons_width);
-        if (button("Delete preset", {appearance.space(26), 0})) {
+        if (button("删除预设", {appearance.space(26), 0})) {
             browser.pending_delete = entry->name;
             ImGui::OpenPopup("Delete preset?");
         }
         ImGui::SameLine();
         ImGui::BeginDisabled(!rt.editing_supported() || !count);
-        if (primary_button("Load into drafts", {appearance.space(33), 0}))
+        if (primary_button("载入草稿", {appearance.space(33), 0}))
             action = LoadPreset{*preset};
         ImGui::EndDisabled();
-        ImGui::TextColored(muted, "%zu slots ready to load", static_cast<std::size_t>(count));
+        ImGui::TextColored(muted, "可载入 %zu 个槽位", static_cast<std::size_t>(count));
         ImGui::BeginChild("preset-slot-previews", {0, 0});
         if (preset) {
             const int columns = ImGui::GetContentRegionAvail().x >= appearance.space(195) ? 3 : 2;
@@ -299,14 +295,12 @@ void draw_presets(const EditorView &rt, std::optional<EditorAction> &action, Pre
             }
             ImGui::PopStyleVar();
         } else
-            notice({"This file is not a valid relic preset.", amber});
+            notice({"该文件不是有效的遗物预设。", amber});
         ImGui::EndChild();
     } else if (rt.preset_error)
-        empty_state(appearance, "Presets unavailable",
-                    "Check folder permissions and reopen Presets to retry.");
+        empty_state(appearance, "预设不可用", "请检查文件夹权限，并重新打开“预设”重试。");
     else
-        empty_state(appearance, "Save your equipped relics",
-                    "Give this setup a name below to create your first preset.");
+        empty_state(appearance, "保存已装备的遗物", "在下方为此配置命名，以创建首个预设。");
     delete_dialog(action, browser, appearance, editor);
     ImGui::EndChild();
     ImGui::EndChild();
@@ -314,14 +308,14 @@ void draw_presets(const EditorView &rt, std::optional<EditorAction> &action, Pre
     const auto footer = ImGui::GetCursorScreenPos();
     const float footer_width = ImGui::GetContentRegionAvail().x;
     ImGui::AlignTextToFramePadding();
-    ImGui::TextColored(muted, "Save equipped effects");
+    ImGui::TextColored(muted, "保存已装备词条");
     ImGui::SameLine();
     const float save_width =
         std::max(appearance.space(34),
-                 ImGui::CalcTextSize("Replace preset").x + ImGui::GetStyle().FramePadding.x * 2);
+                 ImGui::CalcTextSize("替换预设").x + ImGui::GetStyle().FramePadding.x * 2);
     ImGui::SetNextItemWidth(std::max(appearance.space(10), ImGui::GetContentRegionAvail().x -
                                                                save_width - style.ItemSpacing.x));
-    ImGui::InputTextWithHint("##preset-name", "Preset name", browser.name, sizeof(browser.name));
+    ImGui::InputTextWithHint("##preset-name", "预设名称", browser.name, sizeof(browser.name));
     ImGui::SameLine();
     const std::string_view name = browser.name;
     const auto existing =
@@ -337,7 +331,7 @@ void draw_presets(const EditorView &rt, std::optional<EditorAction> &action, Pre
     const bool replacing = existing != rt.presets->end();
     const bool can_save = equipped && rt.editing_supported();
     ImGui::BeginDisabled(!can_save || name.empty());
-    if (button(replacing ? "Replace preset" : "Save preset", {save_width, 0})) {
+    if (button(replacing ? "替换预设" : "保存预设", {save_width, 0})) {
         if (replacing) {
             browser.pending_replace = existing->name;
             ImGui::OpenPopup("Replace preset?");

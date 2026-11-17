@@ -56,19 +56,18 @@ PairValidation RelicValidator::validate_pair(std::uint32_t effect, std::uint32_t
     if (const auto *unknown = std::get_if<UnknownRules>(&context))
         return *unknown;
     if (!effects_.find(effect) || (curse != UINT32_MAX && !effects_.find(curse)))
-        return UnknownRules{"An effect is missing from the installed game's catalogue."};
+        return UnknownRules{"已安装游戏的词条目录中缺少该词条。"};
     for (const auto &[positive, negative] : deep_tables_)
         if (!pools_.contains(positive) || (negative != -1 && !pools_.contains(negative)))
-            return UnknownRules{"A Deep Relic roll table is missing."};
+            return UnknownRules{"缺少深层遗物的抽取表。"};
     const auto dlc = std::get<DlcState>(context);
     const bool base = dlc != DlcState::Present && pair_rollable(effect, curse, false);
     const bool expansion = dlc != DlcState::Absent && pair_rollable(effect, curse, true);
     if (dlc == DlcState::Unknown && base != expansion)
-        return UnknownRules{"This pair depends on DLC ownership, which could not be detected."};
+        return UnknownRules{"该配对取决于 DLC 拥有状态，无法检测。"};
     if (!base && !expansion)
-        return Impossible{curse == UINT32_MAX
-                              ? "This effect requires a paired curse."
-                              : "This curse needs a compatible effect in the same row."};
+        return Impossible{curse == UINT32_MAX ? "该词条需要配对的诅咒。"
+                                              : "该诅咒需要同一行内兼容的词条。"};
     return CompatiblePair{};
 }
 
@@ -81,21 +80,21 @@ ChoiceValidation RelicValidator::validate_choice(std::uint32_t item_id, Effects 
     if (const auto *reason = relic_lock_reason(item))
         return UnknownRules{reason};
     if (position.row >= effects_per_relic)
-        return Impossible{"This effect position is unavailable."};
+        return Impossible{"该词条位置不可用。"};
     const bool curses = position.field == EffectField::Curse;
     const auto row = position.row;
     const auto count = static_cast<std::size_t>(
         std::count_if(item->effect_tables.begin(), item->effect_tables.end(),
                       [](auto table) { return table != -1; }));
     if (row >= count || (curses && item->family != RelicFamily::Deep))
-        return Impossible{"This effect position is unavailable."};
+        return Impossible{"该词条位置不可用。"};
     for (std::size_t i = 0; i < effects_per_relic; ++i) {
         if (i > row)
             effects.rows[i].effect = UINT32_MAX;
         if (i > row || (i == row && !curses))
             effects.rows[i].curse = UINT32_MAX;
         if (i <= row && effects.rows[i].effect == UINT32_MAX)
-            return Impossible{"Choose the earlier effects first."};
+            return Impossible{"请先选择前面的词条。"};
     }
     // Check only the retained prefix, including its curses and cross-field exclusions.
     const auto conflicts = [&](const Effects &selected) {
@@ -125,16 +124,16 @@ ChoiceValidation RelicValidator::validate_choice(std::uint32_t item_id, Effects 
     for (const auto &pair : effects.rows)
         for (const auto id : {pair.effect, pair.curse})
             if (id != UINT32_MAX && !effects_.find(id))
-                return UnknownRules{"An effect is missing from the installed game's catalogue."};
+                return UnknownRules{"已安装游戏的词条目录中缺少该词条。"};
     if (conflicts(effects))
-        return Impossible{"This choice conflicts with an earlier effect or curse."};
+        return Impossible{"该选择与前面的词条或诅咒冲突。"};
     for (const auto table : item->effect_tables)
         if (table != -1 && !pools_.contains(table))
-            return UnknownRules{"This relic's roll table is missing."};
+            return UnknownRules{"缺少该遗物的抽取表。"};
     if (item->family == RelicFamily::Deep)
         for (const auto &[positive, negative] : deep_tables_)
             if (!pools_.contains(positive) || (negative != -1 && !pools_.contains(negative)))
-                return UnknownRules{"A Deep Relic roll table is missing."};
+                return UnknownRules{"缺少深层遗物的抽取表。"};
     const auto possible = [&](bool dlc) {
         if (item->family != RelicFamily::Deep) {
             std::array<std::size_t, effects_per_relic> tables{0, 1, 2};
@@ -181,9 +180,9 @@ ChoiceValidation RelicValidator::validate_choice(std::uint32_t item_id, Effects 
     const bool base = dlc != DlcState::Present && possible(false);
     const bool expansion = dlc != DlcState::Absent && possible(true);
     if (dlc == DlcState::Unknown && base != expansion)
-        return UnknownRules{"This choice depends on DLC ownership, which could not be detected."};
+        return UnknownRules{"该选择取决于 DLC 拥有状态，无法检测。"};
     if (!base && !expansion)
-        return Impossible{"This choice cannot roll with the earlier effect and curse pairs."};
+        return Impossible{"该选择无法与前面的词条和诅咒配对同时抽取。"};
     return AvailableChoice{};
 }
 
@@ -232,17 +231,17 @@ RelicValidation RelicValidator::validate(std::uint32_t item_id, Effects effects,
         return UnknownRules{reason};
     for (const auto table : item->effect_tables)
         if (table != -1 && !pools_.contains(table))
-            return UnknownRules{"This relic's roll table is missing."};
+            return UnknownRules{"缺少该遗物的抽取表。"};
     if (item->family == RelicFamily::Deep)
         for (const auto &[positive, curse] : deep_tables_)
             if (!pools_.contains(positive) || (curse != -1 && !pools_.contains(curse)))
-                return UnknownRules{"A Deep Relic roll table is missing."};
+                return UnknownRules{"缺少深层遗物的抽取表。"};
     const auto count = std::count_if(effects.rows.begin(), effects.rows.end(),
                                      [](const auto &row) { return row.effect != UINT32_MAX; });
     const auto required = std::count_if(item->effect_tables.begin(), item->effect_tables.end(),
                                         [](auto table) { return table != -1; });
     if (count != required)
-        return Impossible{"This relic requires " + std::to_string(required) + " effect(s)."};
+        return Impossible{"该遗物需要 " + std::to_string(required) + " 个词条。"};
     std::set<std::uint32_t> seen;
     std::set<int> compatibility;
     std::set<int> exclusivity;
@@ -253,27 +252,23 @@ RelicValidation RelicValidator::validate(std::uint32_t item_id, Effects effects,
                 continue;
             const auto *effect = effects_.find(id);
             if (!effect)
-                return UnknownRules{"An effect is missing from the installed game's catalogue."};
+                return UnknownRules{"已安装游戏的词条目录中缺少该词条。"};
             if (!seen.insert(id).second)
-                return Impossible{"The same effect cannot appear twice."};
+                return Impossible{"同一词条不能重复出现。"};
             if (effect->compatibility >= 0 && !compatibility.insert(effect->compatibility).second)
-                return Impossible{
-                    "These effects share an exclusion group and cannot roll together."};
+                return Impossible{"这些词条属于同一互斥组，无法同时抽取。"};
             if (effect->exclusivity >= 0 && !exclusivity.insert(effect->exclusivity).second)
-                return Impossible{
-                    "These effects share an exclusivity group and cannot roll together."};
+                return Impossible{"这些词条属于同一排斥组，无法同时抽取。"};
         }
     const auto dlc = std::get<DlcState>(context);
     const auto base_possible = dlc != DlcState::Present && rollable(*item, effects, false);
     const auto dlc_possible = dlc != DlcState::Absent && rollable(*item, effects, true);
     if (dlc == DlcState::Unknown && base_possible != dlc_possible)
-        return UnknownRules{
-            "This combination depends on DLC ownership, which could not be detected."};
+        return UnknownRules{"该组合取决于 DLC 拥有状态，无法检测。"};
     if (!base_possible && !dlc_possible)
-        return Impossible{
-            item->family == RelicFamily::Deep
-                ? "These effects and curses cannot roll together. Choose a compatible effect and curse in the same row."
-                : "No roll on this relic's tables can produce this combination with positive weights."};
+        return Impossible{item->family == RelicFamily::Deep
+                              ? "这些词条与诅咒无法同时抽取。请在对应行选择兼容的词条和诅咒。"
+                              : "该遗物的抽取表无法以正权重产生该组合。"};
     std::sort(effects.rows.begin(), effects.rows.end(),
               [this](const auto &left_row, const auto &right_row) {
                   const auto left = left_row.effect, right = right_row.effect;

@@ -4,8 +4,10 @@
 #include <cstring>
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <limits>
 #include <cfloat>
+#include <vector>
 
 namespace ern::ui {
 namespace {
@@ -137,7 +139,7 @@ void Appearance::effect_pair(const CatalogPresentation &catalog, std::uint32_t e
         vertical_gap(0);
         const auto position = ImGui::GetCursorScreenPos();
         const float width = std::max(0.f, ImGui::GetContentRegionAvail().x - space(7));
-        const auto text = curse == UINT32_MAX ? std::string("No curse") : catalog.describe(curse);
+        const auto text = curse == UINT32_MAX ? std::string("无诅咒") : catalog.describe(curse);
         const auto label = wrap ? text : elide_text(text.c_str(), width);
         const auto ink = text_ink(label.c_str(), nullptr, 0, wrap ? width : 0);
         const float height = std::ceil(std::max({space(4), ImGui::GetFontSize(), ink.y - ink.x}));
@@ -219,10 +221,10 @@ std::string elide_text(const char *text, float width) {
     const float size = ImGui::GetFontSize();
     if (font->CalcTextSizeA(size, FLT_MAX, 0, text).x <= width)
         return text;
-    const float dots = font->CalcTextSizeA(size, FLT_MAX, 0, "...").x;
+    const float dots = font->CalcTextSizeA(size, FLT_MAX, 0, "…").x;
     const char *end = text;
     font->CalcTextSizeA(size, std::max(0.f, width - dots), 0, text, nullptr, &end);
-    return std::string(text, end) + "...";
+    return std::string(text, end) + "…";
 }
 
 void heading(const char *text, ImFont *font, float row_height) {
@@ -304,7 +306,7 @@ bool Appearance::trailing_badge(const char *text, UiRect row, ImVec4 color, int 
 }
 
 Notice read_only_notice(const char *reason) {
-    auto result = feedback("Editing unavailable", reason, NoticeKind::Warning);
+    auto result = feedback("无法编辑", reason, NoticeKind::Warning);
     result.dismissible = false;
     return result;
 }
@@ -387,16 +389,15 @@ NoticeAction notification(Notice &message, const Appearance &appearance, UiRect 
                                  (action_width && dismiss_width ? gap : 0),
                              std::round((height - button_height) / 2)});
     if (action_width) {
-        const auto label =
-            std::string(message.action == NoticeAction::ReloadSlot ? "Reload slot "
-                                                                   : "Review slot ") +
-            std::to_string(message.slot + 1);
+        const auto label = std::string(message.action == NoticeAction::ReloadSlot ? "重新读取槽位 "
+                                                                                  : "查看槽位 ") +
+                           std::to_string(message.slot + 1);
         if (button(label.c_str(), {action_width, button_height}))
             result = message.action;
         if (dismiss_width)
             ImGui::SameLine(0, gap);
     }
-    if (dismiss_width && button("Dismiss", {dismiss_width, button_height}))
+    if (dismiss_width && button("关闭", {dismiss_width, button_height}))
         message.text.clear();
     if (text_height > height - appearance.space(3) && ImGui::IsWindowHovered() &&
         ImGui::IsMouseHoveringRect({text.x, clip.y}, {clip.z, clip.w}))
@@ -549,24 +550,62 @@ void Appearance::initialize(const GameAssets &assets, const SystemFonts &fonts,
     io.Fonts->Clear();
     io.IniFilename = io.LogFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    const auto add_font = [&](const auto &bytes, float size) -> ImFont * {
-        if (bytes.empty())
+    // Every label is Chinese, so a CJK-capable face is used for all four sizes. The ranges
+    // cover ASCII, CJK punctuation, the interface's own characters, and every relic and effect
+    // name currently loaded from the game.
+    static ImVector<ImWchar> glyph_ranges;
+    glyph_ranges.clear();
+    ImFontGlyphRangesBuilder builder;
+    const ImWchar base_ranges[] = {0x0020, 0x00FF, 0x2000, 0x206F, 0x3000,
+                                   0x303F, 0xFF00, 0xFFEF, 0};
+    builder.AddRanges(base_ranges);
+    builder.AddText(
+        "一丁上下不与专两个中为举义之于互些产仅仍从他以仪仰件任份会伤位何作使保信修值停先"
+        "免入全关其兼内再写冲决冻减出击分切划则创初删别到制刷前力加动包化匹卢卸厅原及发取"
+        "受变另只可号合同名后否含启告命和咒品哈器回因固图圆圣在地堂处备复外失夹套始字存"
+        "它安完定宝实害容察对少尚尝就尾局层属巧已布希常并序应度建开异弃式强当录待得御"
+        "必志态性恢恩情感戏成或战所打执技抗护抵抽拒招拥择持损换据排探控提搜撤操支改攻"
+        "放效数文斥断新方无日时是显普智更替最有期未本术权条来杯板析枚果查标校格桌检槽"
+        "模次止正此歧母毒气求没法注测消深清游源潜灵版物特状独率现瓶生用略的盖目省看知"
+        "确示祷称移程稿空突符等签类精索线组终结绝继绪续编缺置耐背能致色艺若草获藏血行"
+        "补表被装要覆见观规角解认记设访证诅识诊词试话该详误请读调败资超跳载辑过运返这"
+        "进连退适选通遗避部配重量销锁错闭问间防际限除集需面韧项须预首验魔默");
+    for (const auto &entry : assets.effect_names)
+        builder.AddText(entry.second.c_str());
+    for (const auto &entry : assets.item_names)
+        builder.AddText(entry.second.c_str());
+    builder.BuildRanges(&glyph_ranges);
+    // The atlas keeps raw pointers to the font file, so the CJK face is held for the process
+    // lifetime instead of borrowing it from the published view.
+    static std::vector<std::uint8_t> cjk_font;
+    cjk_font = fonts.cjk;
+    const auto add_font = [&](const std::uint8_t *data, std::size_t length,
+                              float size) -> ImFont * {
+        if (!data || !length)
             return nullptr;
-        void *owned = IM_ALLOC(bytes.size());
-        if (!owned)
-            return nullptr;
-        std::memcpy(owned, bytes.data(), bytes.size());
         ImFontConfig config;
         config.PixelSnapH = true;
         config.OversampleH = config.OversampleV = 1;
-        return io.Fonts->AddFontFromMemoryTTF(owned, static_cast<int>(bytes.size()), px(size),
-                                              &config);
+        if (!cjk_font.empty()) {
+            config.FontDataOwnedByAtlas = false;
+            config.FontNo = 0;
+            return io.Fonts->AddFontFromMemoryTTF(cjk_font.data(),
+                                                  static_cast<int>(cjk_font.size()), px(size),
+                                                  &config, glyph_ranges.Data);
+        }
+        void *owned = IM_ALLOC(length);
+        if (!owned)
+            return nullptr;
+        std::memcpy(owned, data, length);
+        return io.Fonts->AddFontFromMemoryTTF(owned, static_cast<int>(length), px(size), &config);
     };
-    io.FontDefault = add_font(fonts.controls, 18.f);
+    const auto &controls = cjk_font.empty() ? fonts.controls : cjk_font;
+    const auto &headings = cjk_font.empty() ? fonts.headings : cjk_font;
+    io.FontDefault = add_font(controls.data(), controls.size(), 18.f);
     relic_font = io.FontDefault;
-    tag_font = add_font(fonts.controls, 16.f);
-    title_font = add_font(fonts.headings, 24.f);
-    name_font = add_font(fonts.headings, 20.f);
+    tag_font = add_font(controls.data(), controls.size(), 16.f);
+    title_font = add_font(headings.data(), headings.size(), 24.f);
+    name_font = add_font(headings.data(), headings.size(), 20.f);
     load_icons(*io.Fonts, assets);
 }
 

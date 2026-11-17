@@ -8,7 +8,7 @@ void draw_diagnostics(const EditorView &rt, std::optional<EditorAction> &action,
                       const Appearance &appearance, const EquippedRelics *equipped,
                       std::size_t selected, UiRect editor) {
     const auto position = ImGui::GetCursorScreenPos();
-    if (button("Diagnostics", {appearance.space(24), 0}))
+    if (button("诊断", {appearance.space(24), 0}))
         ImGui::OpenPopup("Diagnostics");
     const auto bounds = effect_popup_bounds(
         editor,
@@ -21,13 +21,13 @@ void draw_diagnostics(const EditorView &rt, std::optional<EditorAction> &action,
                         {std::round(appearance.space(4)), std::round(appearance.space(4))});
     if (ImGui::BeginPopup("Diagnostics", ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
                                              ImGuiWindowFlags_AlwaysAutoResize)) {
-        heading("Diagnostics", appearance.name_font, ImGui::GetFrameHeight());
+        heading("诊断", appearance.name_font, ImGui::GetFrameHeight());
         const float action_width = appearance.space(18), gap = appearance.space(2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - action_width * 2 - gap);
-        const bool refresh = button("Refresh", {action_width, 0});
+        const bool refresh = button("刷新", {action_width, 0});
         ImGui::SameLine(0, gap);
-        if (button("Close", {action_width, 0}))
+        if (button("关闭", {action_width, 0}))
             ImGui::CloseCurrentPopup();
         vertical_gap(appearance.space(3));
         ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, {appearance.space(1), appearance.space(1)});
@@ -41,34 +41,33 @@ void draw_diagnostics(const EditorView &rt, std::optional<EditorAction> &action,
             ImGui::TextWrapped("%s", value.c_str());
             ImGui::PopStyleColor();
         };
-        ImGui::SeparatorText("Session");
+        ImGui::SeparatorText("会话");
         if (ImGui::BeginTable("session-values", 2, ImGuiTableFlags_SizingFixedFit)) {
             ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthFixed,
                                     appearance.space(24));
             ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-            row("Game", rt.version);
-            row("Location", rt.location == EditLocation::RoundtableHold ? "Roundtable Hold"
-                            : rt.location == EditLocation::OutsideRoundtable
-                                ? "Outside Roundtable Hold"
-                                : "Not loaded or unavailable");
-            row("Catalogue", std::to_string(rt.catalog().size()) + " effects, " +
-                                 std::to_string(rt.items().size()) + " relics");
+            row("游戏", rt.version);
+            row("位置", rt.location == EditLocation::RoundtableHold      ? "圆桌厅堂"
+                        : rt.location == EditLocation::OutsideRoundtable ? "圆桌厅堂外"
+                                                                         : "未加载或不可用");
+            row("词条目录", std::to_string(rt.catalog().size()) + " 个词条，" +
+                                std::to_string(rt.items().size()) + " 个遗物");
             if (const auto *dlc = std::get_if<DlcState>(&rt.context))
-                row("DLC", *dlc == DlcState::Present  ? "Installed"
-                           : *dlc == DlcState::Absent ? "Not installed"
-                                                      : "Unknown; both rule sets must agree");
+                row("DLC", *dlc == DlcState::Present  ? "已安装"
+                           : *dlc == DlcState::Absent ? "未安装"
+                                                      : "未知；两套规则必须一致");
             if (const auto *reason = rt.editing_lock_reason())
-                row("Editing", reason, amber);
+                row("编辑", reason, amber);
             if (equipped && equipped->slots[selected]) {
                 const auto &relic = *equipped->slots[selected];
-                row("Item ID", std::to_string(relic.item_id & 0x0FFFFFFF));
-                row("Inventory index", std::to_string(relic.inventory_index()));
+                row("物品 ID", std::to_string(relic.item_id & 0x0FFFFFFF));
+                row("背包序号", std::to_string(relic.inventory_index()));
             }
-            row("Edit journal", rt.journal_path.filename().string());
+            row("编辑日志", rt.journal_path.filename().string());
             ImGui::EndTable();
         }
         ImGui::Spacing();
-        ImGui::SeparatorText("Regulation");
+        ImGui::SeparatorText("规则文件");
         const auto &diagnostic = rt.rule_diagnostics;
         const auto path_text = [](const std::filesystem::path &path) {
             const auto utf8 = path.u8string();
@@ -79,26 +78,26 @@ void draw_diagnostics(const EditorView &rt, std::optional<EditorAction> &action,
                                     appearance.space(24));
             ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
             if (diagnostic.requested_path.empty())
-                row("Source", rt.source_label);
+                row("来源", rt.source_label);
             else {
                 const auto requested = path_text(diagnostic.requested_path),
                            resolved = path_text(diagnostic.resolved_path);
-                row("Requested file", requested.empty() ? "Unavailable" : requested);
-                row("Opened file", resolved.empty() ? "Unavailable" : resolved);
-                row("Detected hash",
-                    diagnostic.detected_hash.empty() ? "Unavailable" : diagnostic.detected_hash);
-                row("Validation hash", rt.source_hash.empty() ? "Unavailable" : rt.source_hash);
-                row("Rules",
+                row("请求的文件", requested.empty() ? "不可用" : requested);
+                row("打开的文件", resolved.empty() ? "不可用" : resolved);
+                row("检测到的哈希",
+                    diagnostic.detected_hash.empty() ? "不可用" : diagnostic.detected_hash);
+                row("校验哈希", rt.source_hash.empty() ? "不可用" : rt.source_hash);
+                row("规则",
                     !diagnostic.error.empty()                    ? diagnostic.error
-                    : diagnostic.detected_hash == rt.source_hash ? "Match the active regulation.bin"
-                                                                 : "Not checked",
+                    : diagnostic.detected_hash == rt.source_hash ? "与当前 regulation.bin 匹配"
+                                                                 : "未检查",
                     !diagnostic.error.empty() ? amber : ivory);
-                row("Local assets",
-                    std::to_string(rt.assets().item_names.size()) + " item names, " +
-                        std::to_string(rt.assets().effect_names.size()) + " effect names, " +
-                        std::to_string(rt.assets().cells.size()) + " icons");
+                row("本地资源", std::to_string(rt.assets().item_names.size()) + " 个物品名称，" +
+                                    std::to_string(rt.assets().effect_names.size()) +
+                                    " 个词条名称，" + std::to_string(rt.assets().cells.size()) +
+                                    " 个图标");
                 if (!rt.assets().warnings.empty())
-                    row("Asset fallback", rt.assets().warnings.front(), amber);
+                    row("资源回退", rt.assets().warnings.front(), amber);
             }
             ImGui::EndTable();
         }

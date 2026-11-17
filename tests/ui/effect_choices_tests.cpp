@@ -14,16 +14,11 @@ EffectChoiceInputs fixture() {
     auto rules = synthetic_rules();
     rules.pools[30][7001802] = {false, true};
     ern::GameAssets assets;
-    assets.effect_names = {{7000400, "Strength +1"},
-                           {7000401, "Strength +1"},
-                           {7000402, "Strength +3"},
-                           {7000601, "Attack power"},
-                           {7000602, "Poison attack"},
-                           {7001801, "Recovery after attack"},
-                           {7001802, "Restore HP"},
-                           {900001, "Maximum HP reduced"},
-                           {900002, "Damage taken increased"},
-                           {900003, "Flask recovery reduced"}};
+    assets.effect_names = {{7000400, "力气+1"},         {7000401, "力气+1"},
+                           {7000402, "力气+3"},         {7000601, "攻击力提升"},
+                           {7000602, "中毒攻击力提升"}, {7001801, "攻击时恢复专注值"},
+                           {7001802, "恢复血量"},       {900001, "血量上限降低"},
+                           {900002, "受到的伤害增加"},  {900003, "圣杯瓶恢复量降低"}};
     EffectChoiceInputs inputs{};
     inputs.rules = std::make_shared<const ern::RelicValidator>(std::move(rules));
     inputs.resources = std::make_shared<const ern::GameAssets>(std::move(assets));
@@ -58,7 +53,7 @@ void preparation() {
             "A normal first-row replacement was incorrectly blocked or tagged");
     inputs.position = {1, ern::EffectField::Effect};
     const auto later = ern::ui::prepare_effect_choices(inputs);
-    require(!available(choice(later, 7000400)) && choice(later, 7000400).tag == "Unavailable" &&
+    require(!available(choice(later, 7000400)) && choice(later, 7000400).tag == "不可用" &&
                 available(choice(later, 7000602)),
             "Preparation ignored earlier-row conflicts or discarded unavailable "
             "choices");
@@ -68,7 +63,7 @@ void preparation() {
             "A DLC-only effect was available without the DLC");
     inputs.context = ern::UnknownRules{"Synthetic rules unavailable"};
     const auto unknown = ern::ui::prepare_effect_choices(inputs);
-    require(choice(unknown, 7001802).tag == "Rules unavailable" &&
+    require(choice(unknown, 7001802).tag == "规则不可用" &&
                 ern::validation_reason(choice(unknown, 7001802).validation) ==
                     "Synthetic rules unavailable",
             "Unknown-rule choices lost their diagnostic reason");
@@ -79,7 +74,7 @@ void preparation() {
     inputs.position = {2, ern::EffectField::Effect};
     const auto deep = ern::ui::prepare_effect_choices(inputs);
     require(deep.deep && !deep.curses && available(choice(deep, 7001802)) &&
-                choice(deep, 7001802).tag == "Curse required",
+                choice(deep, 7001802).tag == "需要诅咒",
             "Deep positive choices lost paired-curse availability or its tag");
     inputs.position.field = ern::EffectField::Curse;
     const auto curses = ern::ui::prepare_effect_choices(inputs);
@@ -101,16 +96,16 @@ void caching() {
     revised_rules.effects.at(7000400).text_id = -1;
     changed.rules = std::make_shared<const ern::RelicValidator>(std::move(revised_rules));
     auto previous = cache.get(changed);
-    require(previous != first && choice(*previous, 7000400).description == "Effect ID 7000400" &&
-                choice(*first, 7000400).description == "Strength +1",
+    require(previous != first && choice(*previous, 7000400).description == "词条 ID 7000400" &&
+                choice(*first, 7000400).description == "力气+1",
             "New immutable rules reused the previous choices or mutated a "
             "retained result");
     auto revised_assets = std::make_shared<ern::GameAssets>(*inputs.resources);
-    revised_assets->effect_names[7000402] = "Strength +30";
+    revised_assets->effect_names[7000402] = "力气+30";
     changed.resources = std::move(revised_assets);
     auto next = cache.get(changed);
-    require(next != previous && choice(*next, 7000402).description == "Strength +30" &&
-                choice(*previous, 7000402).description == "Strength +3",
+    require(next != previous && choice(*next, 7000402).description == "力气+30" &&
+                choice(*previous, 7000402).description == "力气+3",
             "New immutable assets reused old descriptions or mutated a retained "
             "result");
     previous = next;

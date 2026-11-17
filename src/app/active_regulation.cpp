@@ -7,7 +7,7 @@ ActiveRegulation::ActiveRegulation(std::filesystem::path requested,
       game_directory_(game_directory.empty() ? requested_.parent_path()
                                              : std::move(game_directory)),
       read_(std::move(read)) {
-    diagnostics_ = {requested_, {}, {}, "Waiting for the active regulation.bin."};
+    diagnostics_ = {requested_, {}, {}, "正在等待生效的 regulation.bin。"};
 }
 
 ActiveRegulation::~ActiveRegulation() {
@@ -30,7 +30,7 @@ void ActiveRegulation::read_and_publish() {
     try {
         auto file = read_(requested_);
         if (const auto *error = std::get_if<FileError>(&file)) {
-            next->diagnostics.error = "Cannot read the active regulation.bin. " + error->message;
+            next->diagnostics.error = "无法读取生效的 regulation.bin。 " + error->message;
         } else {
             const auto &content = std::get<FileContent>(file);
             next->diagnostics.resolved_path = content.resolved_path;
@@ -39,8 +39,7 @@ void ActiveRegulation::read_and_publish() {
                 auto parsed = read_regulation(content.bytes, game_directory_);
                 if (const auto *parse_error = std::get_if<FileError>(&parsed)) {
                     next->diagnostics.error =
-                        "Cannot load relic rules from the active regulation.bin. " +
-                        parse_error->message;
+                        "无法从生效的 regulation.bin 加载遗物规则。 " + parse_error->message;
                 } else {
                     next->rules = std::make_shared<const RelicValidator>(
                         std::get<RegulationRules>(std::move(parsed)));
@@ -49,8 +48,7 @@ void ActiveRegulation::read_and_publish() {
             }
         }
     } catch (const std::exception &error) {
-        next->diagnostics.error =
-            "Cannot check the active regulation.bin. " + std::string(error.what());
+        next->diagnostics.error = "无法检查生效的 regulation.bin。 " + std::string(error.what());
     }
     latest_.store(std::move(next));
 }
@@ -80,8 +78,7 @@ void ActiveRegulation::poll() {
     diagnostics_ = observation->diagnostics;
     if (locked_hash_ && !diagnostics_.detected_hash.empty() &&
         diagnostics_.detected_hash != *locked_hash_) {
-        diagnostics_.error =
-            "The active regulation changed after the character loaded. Restart Nightreign to use the new rules.";
+        diagnostics_.error = "角色加载后 regulation 已变更。请重启 Nightreign 以使用新规则。";
     }
     if (diagnostics_.error.empty() && observation->rules) {
         rules_ = observation->rules;
@@ -98,7 +95,7 @@ RuleContext ActiveRegulation::context(DlcState dlc) const {
     if (!diagnostics_.error.empty())
         return UnknownRules{diagnostics_.error};
     if (source_hash_.empty())
-        return UnknownRules{"Relic roll data is unavailable."};
+        return UnknownRules{"遗物抽取规则数据不可用。"};
     return dlc;
 }
 } // namespace ern

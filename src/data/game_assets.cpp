@@ -250,16 +250,18 @@ Bytes crop(View dds, const Rect &rect) {
 
 GameAssets read_game_assets(const std::filesystem::path &directory,
                             std::span<const IconKey> icons) {
-    const std::array<std::string, 5> paths{
-        "/msg/engus/item_dlc01.msgbnd.dcx", "/menu/01_common_h.sblytbnd.dcx",
-        "/menu/01_common_h.tpf.dcx", "/menu/21_common_dlc01_h.sblytbnd.dcx",
-        "/menu/21_common_dlc01_h.tpf.dcx"};
+    const std::array<std::string, 6> paths{
+        "/msg/zhocn/item_dlc01.msgbnd.dcx",     "/msg/engus/item_dlc01.msgbnd.dcx",
+        "/menu/01_common_h.sblytbnd.dcx",       "/menu/01_common_h.tpf.dcx",
+        "/menu/21_common_dlc01_h.sblytbnd.dcx", "/menu/21_common_dlc01_h.tpf.dcx"};
     auto files = read_game_files(directory, paths);
     GameAssets result;
     result.warnings = std::move(files.warnings);
-    try {
-        const auto found = files.files.find(paths[0]);
-        if (found != files.files.end()) {
+    for (const std::size_t language : {std::size_t(0), std::size_t(1)}) {
+        try {
+            const auto found = files.files.find(paths[language]);
+            if (found == files.files.end())
+                continue;
             const auto tables = binder(found->second, directory, [](auto name) {
                 return name.starts_with("AntiqueName") || name.starts_with("AttachEffectName");
             });
@@ -270,21 +272,22 @@ GameAssets read_game_assets(const std::filesystem::path &directory,
                 try {
                     for (auto &[id, text] : messages(tables.at(name))) {
                         if (name.starts_with("AntiqueName"))
-                            result.item_names[static_cast<std::uint32_t>(id)] = std::move(text);
+                            result.item_names.try_emplace(static_cast<std::uint32_t>(id),
+                                                          std::move(text));
                         else
-                            result.effect_names[id] = std::move(text);
+                            result.effect_names.try_emplace(id, std::move(text));
                     }
                 } catch (const std::exception &error) {
                     result.warnings.push_back("Messages: " + name + ": " + error.what());
                 }
             }
+        } catch (const std::exception &error) {
+            result.warnings.push_back("Messages: " + paths[language] + ": " + error.what());
         }
-    } catch (const std::exception &error) {
-        result.warnings.push_back(std::string("Messages: ") + error.what());
     }
     const std::set<IconKey> wanted(icons.begin(), icons.end());
     std::map<IconKey, Bytes> crops;
-    for (std::size_t index : {std::size_t(1), std::size_t(3)}) {
+    for (std::size_t index : {std::size_t(2), std::size_t(4)}) {
         try {
             const auto layout_file = files.files.find(paths[index]),
                        texture_file = files.files.find(paths[index + 1]);

@@ -86,7 +86,7 @@ class Runtime {
         std::make_shared<const RelicValidator>();
     std::unique_ptr<ActiveRegulation> regulation_;
     EditorSession editor_;
-    RuleContext rule_context_ = UnknownRules{"Waiting for the game data."};
+    RuleContext rule_context_ = UnknownRules{"正在等待游戏数据。"};
     std::shared_ptr<const GameAssets> assets_ = std::make_shared<const GameAssets>();
     SessionId session_;
     std::string last_rule_diagnostics_;
@@ -94,7 +94,7 @@ class Runtime {
     std::optional<RelicRoots> roots_;
     std::optional<RelicOwner> owner_;
     EditLocation location_ = EditLocation::Unavailable;
-    Inspection inspection_ = InspectionMessage{"Waiting for the game to load."};
+    Inspection inspection_ = InspectionMessage{"正在等待游戏加载。"};
     std::chrono::steady_clock::time_point next_scan_{};
     std::chrono::steady_clock::time_point next_read_{};
 };

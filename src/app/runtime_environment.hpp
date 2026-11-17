@@ -18,7 +18,7 @@ struct RuntimeEnvironment {
     std::filesystem::path game_directory;
     std::string executable_version;
     std::string journal_name = "relic-edits.jsonl";
-    std::string source_label = "Active regulation.bin";
+    std::string source_label = "生效的 regulation.bin";
     int hotkey = 0x77;
     bool open_on_start = false;
     std::uint32_t equipped_offset = game_layout::equipped_relics;

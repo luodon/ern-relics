@@ -117,14 +117,14 @@ void Runtime::refresh_memory() {
                 log("Character unloaded. Drafts and Undo cleared.");
             }
             location_ = EditLocation::NotLoaded;
-            inspection_ = InspectionMessage{"Load a character to use the relic editor."};
+            inspection_ = InspectionMessage{"请先加载角色，再使用遗物编辑器。"};
             break;
         case ReadFailure::Unreadable:
             inspection_ = InspectionMessage{
-                "Load your character to inspect relics. If this remains after loading, the relic layout may not match this patch."};
+                "请加载角色以读取遗物。若加载完成后仍显示此提示，则当前游戏补丁的遗物布局可能不受支持。"};
             break;
         case ReadFailure::Changed:
-            inspection_ = InspectionMessage{"Equipment changed during the read. Refreshing..."};
+            inspection_ = InspectionMessage{"读取期间装备发生变化，正在刷新…"};
             break;
         }
     }
@@ -147,7 +147,7 @@ const char *Runtime::editing_lock_reason() const {
     if (const auto *unknown = std::get_if<UnknownRules>(&rule_context_))
         return unknown->reason.c_str();
     if (!roots_)
-        return "Wait until the equipped relics are readable.";
+        return "请等待已装备遗物可被读取。";
     return location_lock_reason(location_);
 }
 
@@ -175,9 +175,9 @@ void Runtime::verify_rule_context() {
 
 void Runtime::update_rule_context() {
     if (!environment_.layout_verified)
-        rule_context_ = UnknownRules{"Editing requires game build " +
-                                     std::string(game_layout::executable_version) +
-                                     " and its default relic layout."};
+        rule_context_ =
+            UnknownRules{"编辑需要游戏版本 " + std::string(game_layout::executable_version) +
+                         " 及其默认遗物布局。"};
     else
         rule_context_ = regulation_ ? regulation_->context(environment_.dlc())
                                     : RuleContext{environment_.dlc()};
@@ -229,13 +229,9 @@ DraftApplyResult Runtime::apply_drafts() {
     if (owner != owner_) {
         for (std::size_t i = 0; i < drafts.size(); ++i)
             if (drafts[i] && drafts[i]->effects != drafts[i]->original.effects)
-                return {
-                    0,
-                    SlotFailure{
-                        i,
-                        EditRejected{
-                            EditRejectReason::Stale,
-                            "Character session changed. Previous drafts and Undo were cleared."}}};
+                return {0, SlotFailure{
+                               i, EditRejected{EditRejectReason::Stale,
+                                               "角色会话已变化，之前的草稿与撤销记录已清除。"}}};
     }
     const auto *equipped = std::get_if<EquippedRelics>(&inspection_);
     std::vector<UndoChange> changes;
@@ -300,7 +296,7 @@ EditResult Runtime::write_change(const RelicOwner &owner, std::size_t slot, cons
     if (!current || current->owner != owner) {
         invalidate_session();
         return EditRejected{EditRejectReason::Stale,
-                            "Character session changed. Previous drafts and Undo were cleared."};
+                            "角色会话已变化，之前的草稿与撤销记录已清除。"};
     }
     if (!current->relics.slots[slot] || *current->relics.slots[slot] != expected)
         return EditRejected{EditRejectReason::Stale, {}};

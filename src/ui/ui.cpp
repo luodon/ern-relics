@@ -29,9 +29,8 @@ void EditorUi::consume(const EditorView &view) {
                                std::holds_alternative<ReloadPresets>(action) ||
                                std::holds_alternative<LoadPreset>(action);
     const auto reject = [&](std::string text) {
-        auto message =
-            ui::feedback(preset_action ? "Preset operation failed" : "Changes weren't applied",
-                         std::move(text), ui::NoticeKind::Error);
+        auto message = ui::feedback(preset_action ? "预设操作失败" : "更改未应用", std::move(text),
+                                    ui::NoticeKind::Error);
         if (!preset_action && view.review.blocked) {
             message.slot = view.review.blocked->slot;
             message.action = view.review.blocked->rejection.reason == EditRejectReason::Stale
@@ -43,7 +42,7 @@ void EditorUi::consume(const EditorView &view) {
     std::visit(
         Match{[](const std::monostate &) {},
               [&](const EditRejected &result) { reject(ui::rejection_message(result)); },
-              [&](const OperationFailed &result) { reject("Operation failed: " + result.detail); },
+              [&](const OperationFailed &result) { reject("操作失败：" + result.detail); },
               [&](PresetStoreError result) { reject(ui::preset_store_message(result)); },
               [&](const AppliedDrafts &applied) {
                   const auto &result = applied.result;
@@ -64,17 +63,14 @@ void EditorUi::consume(const EditorView &view) {
                   }
                   state_.applied_focus.reset();
                   if (!result.failure)
-                      state_.status = ui::feedback(
-                          "Changes applied",
-                          "Applied changes to " + std::to_string(result.applied) +
-                              (result.applied == 1 ? " relic. Save through the game."
-                                                   : " relics. Save through the game."),
-                          ui::NoticeKind::Success);
+                      state_.status = ui::feedback("更改已应用",
+                                                   "已应用 " + std::to_string(result.applied) +
+                                                       " 个遗物。请在游戏内保存。",
+                                                   ui::NoticeKind::Success);
                   else {
                       state_.status = ui::feedback(
-                          "Some changes weren't applied",
-                          (result.applied ? "Applied " + std::to_string(result.applied) +
-                                                (result.applied == 1 ? " relic. " : " relics. ")
+                          "部分更改未应用",
+                          (result.applied ? "已应用 " + std::to_string(result.applied) + " 个遗物。"
                                           : "") +
                               ui::slot_failure_message(*result.failure),
                           ui::NoticeKind::Warning);
@@ -84,32 +80,27 @@ void EditorUi::consume(const EditorView &view) {
               },
               [&](const UndoneEdit &result) {
                   const auto count = result.result.restored;
-                  const auto restored = "Undid changes to " + std::to_string(count) +
-                                        (count == 1 ? " relic. " : " relics. ");
+                  const auto restored = "已撤销 " + std::to_string(count) + " 个遗物的更改。";
                   if (result.result.failure)
                       reject((count ? restored : "") +
                              ui::slot_failure_message(*result.result.failure));
                   else if (count)
-                      state_.status =
-                          ui::feedback("Changes undone", restored + "Save through the game.",
-                                       ui::NoticeKind::Success);
+                      state_.status = ui::feedback("更改已撤销", restored + "请在游戏内保存。",
+                                                   ui::NoticeKind::Success);
                   else
-                      state_.status =
-                          ui::feedback("Nothing to undo", "No changes to undo in this session.",
-                                       ui::NoticeKind::Info);
+                      state_.status = ui::feedback("没有可撤销的更改", "本次会话没有可撤销的更改。",
+                                                   ui::NoticeKind::Info);
               },
               [&](const SavedPresetResult &result) {
                   browser_.selected = result.name;
                   browser_.feedback =
-                      ui::feedback("Preset saved",
-                                   "Saved " + std::to_string(result.count) +
-                                       (result.count == 1 ? " equipped relic template."
-                                                          : " equipped relic templates."),
+                      ui::feedback("预设已保存",
+                                   "已保存 " + std::to_string(result.count) + " 个已装备遗物模板。",
                                    ui::NoticeKind::Success);
               },
               [&](const DeletedPresetResult &) {
-                  browser_.feedback = ui::feedback("Preset deleted", "The preset was removed.",
-                                                   ui::NoticeKind::Success);
+                  browser_.feedback =
+                      ui::feedback("预设已删除", "预设已移除。", ui::NoticeKind::Success);
               },
               [&](const LoadedPresetResult &result) {
                   const auto count = std::count_if(
@@ -124,13 +115,11 @@ void EditorUi::consume(const EditorView &view) {
                   state_.effect_filter.Clear();
                   state_.group_filter.reset();
                   const bool skipped = static_cast<std::size_t>(count) < result.requested;
-                  state_.status =
-                      ui::feedback("Preset loaded into drafts",
-                                   "Loaded " + std::to_string(count) +
-                                       (count == 1 ? " relic draft." : " relic drafts."),
-                                   skipped ? ui::NoticeKind::Warning : ui::NoticeKind::Success);
+                  state_.status = ui::feedback(
+                      "预设已载入草稿", "已载入 " + std::to_string(count) + " 个遗物草稿。",
+                      skipped ? ui::NoticeKind::Warning : ui::NoticeKind::Success);
                   if (skipped)
-                      state_.status.text += " Incompatible slots were skipped.";
+                      state_.status.text += " 不兼容的槽位已跳过。";
                   page_ = Page::Editor;
               }},
         view.completion->outcome);
@@ -170,15 +159,15 @@ void EditorUi::draw(const EditorView &rt, bool pending, std::optional<EditorActi
     const auto position = ImGui::GetWindowPos(), window_size = ImGui::GetWindowSize();
     const UiRect editor{position.x, position.y, window_size.x, window_size.y};
     const auto *equipped = std::get_if<EquippedRelics>(&rt.inspection);
-    ui::heading("Relic editor", appearance_.title_font, control_height);
+    ui::heading("遗物编辑器", appearance_.title_font, control_height);
     ImGui::SameLine();
     const float nav_width = appearance_.space(26), close_width = appearance_.space(26);
     ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - nav_width - close_width -
                          ImGui::GetStyle().ItemSpacing.x);
     ImGui::BeginDisabled(pending || (page_ == Page::Editor && !rt.editing_supported()));
-    const char *navigation = pending                  ? "Updating...###page-navigation"
-                             : page_ == Page::Presets ? "Editor###page-navigation"
-                                                      : "Presets###page-navigation";
+    const char *navigation = pending                  ? "正在更新…###page-navigation"
+                             : page_ == Page::Presets ? "编辑器###page-navigation"
+                                                      : "预设###page-navigation";
     if (ui::button(navigation, {nav_width, 0})) {
         page_ = page_ == Page::Presets ? Page::Editor : Page::Presets;
         if (page_ == Page::Presets) {
@@ -188,7 +177,7 @@ void EditorUi::draw(const EditorView &rt, bool pending, std::optional<EditorActi
     }
     ImGui::EndDisabled();
     ImGui::SameLine();
-    if (ui::button(("Close (" + rt.hotkey_name + ")").c_str(), {close_width, 0}))
+    if (ui::button(("关闭（" + rt.hotkey_name + "）").c_str(), {close_width, 0}))
         open = false;
     ui::vertical_gap(appearance_.space(2));
     ImGui::BeginChild("page-content", {0, 0});

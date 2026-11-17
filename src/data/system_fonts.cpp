@@ -8,7 +8,7 @@ namespace {
 std::vector<std::uint8_t> font_bytes(const std::filesystem::path &path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     const auto size = file.tellg();
-    if (!file || size <= 0 || size > 16 * 1024 * 1024)
+    if (!file || size <= 0 || size > 32 * 1024 * 1024)
         return {};
     std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
     file.seekg(0);
@@ -22,6 +22,13 @@ SystemFonts read_system_fonts() {
     if (!size || size >= 32768)
         return {};
     const auto directory = std::filesystem::path(windows) / "Fonts";
-    return {font_bytes(directory / "segoeui.ttf"), font_bytes(directory / "georgia.ttf")};
+    std::vector<std::uint8_t> cjk;
+    for (const auto *name : {"msyh.ttc", "simhei.ttf", "deng.ttf", "simsun.ttc"}) {
+        cjk = font_bytes(directory / name);
+        if (!cjk.empty())
+            break;
+    }
+    return {font_bytes(directory / "segoeui.ttf"), font_bytes(directory / "georgia.ttf"),
+            std::move(cjk)};
 }
 } // namespace ern

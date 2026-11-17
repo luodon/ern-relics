@@ -101,7 +101,7 @@ std::optional<std::string> install_native_relic_equip(MemoryRead read, MemoryWri
         auto actual = entry.bytes;
         if (!read(native.module + entry.rva, std::as_writable_bytes(std::span(actual))) ||
             actual != entry.bytes)
-            return "The native relic equip layout is not supported. Editing is locked.";
+            return "不支持当前原生遗物装备布局，编辑已锁定。";
     }
     native.read = std::move(read);
     native.write = std::move(write);

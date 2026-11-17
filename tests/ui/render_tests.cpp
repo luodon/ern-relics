@@ -430,29 +430,29 @@ void preset_replacement(float height) {
         render();
     };
     render();
-    activate("render-check", "Replace preset");
+    activate("render-check", "替换预设");
     require(!action && browser.pending_replace == "Fixture preset" &&
                 child("Replace preset?").Active,
             "A case-alias save skipped replacement confirmation");
-    activate("Replace preset?", "Cancel");
+    activate("Replace preset?", "取消");
     require(!action && browser.pending_replace.empty(),
             "Canceling preset replacement emitted a save command");
-    activate("render-check", "Replace preset");
+    activate("render-check", "替换预设");
     ImGui::GetIO().AddKeyEvent(ImGuiKey_Escape, true);
     render();
     ImGui::GetIO().AddKeyEvent(ImGuiKey_Escape, false);
     render();
     require(!action && browser.pending_replace.empty(),
             "Escape from preset replacement emitted a save command");
-    activate("render-check", "Replace preset");
+    activate("render-check", "替换预设");
     std::copy_n("Another name", sizeof("Another name"), browser.name);
-    activate("Replace preset?", "Replace preset");
+    activate("Replace preset?", "替换预设");
     const auto *replace = action ? std::get_if<ern::SavePreset>(&*action) : nullptr;
     require(replace && replace->name == "Fixture preset" &&
                 replace->mode == ern::PresetSaveMode::Replace && browser.pending_replace.empty(),
             "Confirmed replacement lost its frozen target name or replacement intent");
     action.reset();
-    activate("render-check", "Save preset");
+    activate("render-check", "保存预设");
     const auto *create = action ? std::get_if<ern::SavePreset>(&*action) : nullptr;
     require(create && create->name == "Another name" &&
                 create->mode == ern::PresetSaveMode::Create &&
@@ -490,7 +490,7 @@ void menu_transition(float height) {
     view.session.value = 1;
     view.location = ern::EditLocation::NotLoaded;
     view.lock_reason = ern::location_lock_reason(view.location);
-    view.inspection = ern::InspectionMessage{"Load a character to use the relic editor."};
+    view.inspection = ern::InspectionMessage{"请先加载角色，再使用遗物编辑器。"};
     view.drafts = {};
     view.review = {};
     const auto menu = view;
@@ -517,8 +517,8 @@ void menu_transition(float height) {
     };
     const auto check_menu = [&] {
         const auto text = draw();
-        require(text.find("Character not loaded") != std::string::npos &&
-                    text.find("Load a character to use the relic editor.") != std::string::npos,
+        require(text.find("角色未加载") != std::string::npos &&
+                    text.find("请先加载角色，再使用遗物编辑器。") != std::string::npos,
                 "The title menu did not explain how to open the relic editor");
         require(child("##notification").Active,
                 "The title menu did not retain the editing lock notice");
@@ -852,8 +852,7 @@ void validation_notice(float height) {
     require(first != std::string::npos &&
                 text.find(reason, first + reason.size()) == std::string::npos,
             "The roll validation warning is missing or duplicated");
-    require(text.find("Dismiss") == std::string::npos &&
-                text.find("Review slot") == std::string::npos,
+    require(text.find("关闭") == std::string::npos && text.find("查看槽位") == std::string::npos,
             "The current slot's live validation error has redundant controls");
     const auto &banner = child("##notification");
     ImGui::GetIO().AddMousePosEvent(banner.Pos.x + banner.Size.x - frame.appearance.px(24),
@@ -919,8 +918,8 @@ void card_changes_tooltip(float height) {
     const std::string text = ImGui::GetCurrentContext()->LogBuffer.c_str();
     ImGui::LogFinish();
     Frame::end();
-    require(text.find("Relic changes") != std::string::npos &&
-                text.find("Effect 1") != std::string::npos &&
+    require(text.find("遗物更改") != std::string::npos &&
+                text.find("词条 1") != std::string::npos &&
                 text.find("Strength +1") != std::string::npos &&
                 text.find(view.presentation().describe(7000402)) != std::string::npos &&
                 text.find(view.presentation().describe(7000602)) != std::string::npos,

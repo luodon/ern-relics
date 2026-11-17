@@ -23,12 +23,12 @@ std::string file_version(const std::filesystem::path &path) {
     const auto size = GetFileVersionInfoSizeW(path.c_str(), &ignored);
     std::vector<std::byte> data(size);
     if (size == 0 || !GetFileVersionInfoW(path.c_str(), 0, size, data.data()))
-        return "Unknown";
+        return "未知";
     VS_FIXEDFILEINFO *info = nullptr;
     UINT info_size = 0;
     if (!VerQueryValueW(data.data(), L"\\", reinterpret_cast<void **>(&info), &info_size) ||
         info_size < sizeof(*info))
-        return "Unknown";
+        return "未知";
     return std::to_string(HIWORD(info->dwFileVersionMS)) + "." +
            std::to_string(LOWORD(info->dwFileVersionMS)) + "." +
            std::to_string(HIWORD(info->dwFileVersionLS)) + "." +
@@ -93,28 +93,28 @@ std::variant<RelicRoots, std::string> locate_game_roots() {
     IMAGE_DOS_HEADER dos{};
     if (!read_live_memory(base, std::as_writable_bytes(std::span(&dos, 1))) ||
         dos.e_magic != IMAGE_DOS_SIGNATURE || dos.e_lfanew <= 0)
-        return std::string{"Cannot inspect the executable for relic signatures."};
+        return std::string{"无法检查可执行文件中的遗物签名。"};
     IMAGE_NT_HEADERS64 nt{};
     if (!read_live_memory(base + dos.e_lfanew, std::as_writable_bytes(std::span(&nt, 1))) ||
         nt.Signature != IMAGE_NT_SIGNATURE || nt.FileHeader.NumberOfSections > 96)
-        return std::string{"Cannot inspect the executable for relic signatures."};
+        return std::string{"无法检查可执行文件中的遗物签名。"};
     const auto section_table = base + dos.e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) +
                                nt.FileHeader.SizeOfOptionalHeader;
     for (unsigned int i = 0; i < nt.FileHeader.NumberOfSections; ++i) {
         IMAGE_SECTION_HEADER section{};
         if (!read_live_memory(section_table + i * sizeof(section),
                               std::as_writable_bytes(std::span(&section, 1))))
-            return std::string{"Cannot inspect the executable for relic signatures."};
+            return std::string{"无法检查可执行文件中的遗物签名。"};
         if (std::string_view(reinterpret_cast<char *>(section.Name), 5) != ".text")
             continue;
         if (section.Misc.VirtualSize == 0 ||
             section.Misc.VirtualSize > nt.OptionalHeader.SizeOfImage ||
             section.VirtualAddress > nt.OptionalHeader.SizeOfImage - section.Misc.VirtualSize)
-            return std::string{"Cannot inspect the executable for relic signatures."};
+            return std::string{"无法检查可执行文件中的遗物签名。"};
         std::vector<std::byte> code(section.Misc.VirtualSize);
         const auto section_address = base + section.VirtualAddress;
         if (!read_live_memory(section_address, code))
-            return std::string{"Cannot inspect the executable for relic signatures."};
+            return std::string{"无法检查可执行文件中的遗物签名。"};
         const auto item_pattern = parse_pattern(game_layout::item_signature);
         const auto game_pattern = parse_pattern(game_layout::game_signature);
         const auto world_pattern = parse_pattern(game_layout::world_signature);
@@ -125,13 +125,12 @@ std::variant<RelicRoots, std::string> locate_game_roots() {
         auto world_global = find_unique_rip_target(code, section_address, *world_pattern,
                                                    game_layout::world_displacement);
         if (!item_global || !game_global) {
-            return std::string{
-                "Relic signatures are missing or ambiguous. This game build is not supported yet."};
+            return std::string{"遗物签名缺失或存在歧义，当前游戏版本尚不受支持。"};
         }
         if (*item_global < base || *game_global < base ||
             *item_global - base > nt.OptionalHeader.SizeOfImage - sizeof(Address) ||
             *game_global - base > nt.OptionalHeader.SizeOfImage - sizeof(Address))
-            return std::string{"Cannot inspect the executable for relic signatures."};
+            return std::string{"无法检查可执行文件中的遗物签名。"};
         if (world_global &&
             (*world_global < base ||
              *world_global - base > nt.OptionalHeader.SizeOfImage - sizeof(Address)))
@@ -146,7 +145,7 @@ std::variant<RelicRoots, std::string> locate_game_roots() {
         application().log(message.str());
         return roots;
     }
-    return std::string{"Cannot inspect the executable for relic signatures."};
+    return std::string{"无法检查可执行文件中的遗物签名。"};
 }
 
 bool startup_failure(const std::filesystem::path &directory, const char *message) {
@@ -166,12 +165,10 @@ bool bootstrap_application(HMODULE module) {
     const auto executable = module_path(nullptr);
     const bool host = _wcsicmp(executable.filename().c_str(), L"ern-relics-host.exe") == 0;
     if (!host && _wcsicmp(executable.filename().c_str(), L"nightreign.exe") != 0)
-        return startup_failure(environment.directory,
-                               "Unsupported executable. Initialization stopped.");
+        return startup_failure(environment.directory, "不支持当前可执行文件，初始化已停止。");
     if (!host && eac_running_or_unavailable())
-        return startup_failure(
-            environment.directory,
-            "EAC is running, or process enumeration failed. Initialization stopped.");
+        return startup_failure(environment.directory,
+                               "EAC 正在运行，或进程枚举失败。初始化已停止。");
     const auto ini = environment.directory / "ern-relics.ini";
     if (const auto key = ini_number(L"overlay", L"hotkey", ini);
         key && *key >= VK_F1 && *key <= VK_F24)
@@ -216,7 +213,7 @@ bool bootstrap_application(HMODULE module) {
             GetEnvironmentVariableW(L"ERN_RELICS_TEST_REGULATION", regulation, 32768);
         if (rule_size > 0 && rule_size < 32768) {
             environment.rules = FileRuleSource{regulation};
-            environment.source_label = "Active regulation.bin";
+            environment.source_label = "生效的 regulation.bin";
         }
     } else {
         environment.game_directory = executable.parent_path();

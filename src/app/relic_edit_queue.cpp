@@ -28,8 +28,7 @@ EditResult RelicEditQueue::submit(RelicEditRequest request, std::chrono::millise
     const auto message = std::make_shared<Message>(Message{std::move(request)});
     std::unique_lock lock(mutex_);
     if (current_)
-        return EditRejected{EditRejectReason::EquipUnavailable,
-                            "Another relic update is still finishing."};
+        return EditRejected{EditRejectReason::EquipUnavailable, "另一个遗物更新尚未完成。"};
     current_ = message;
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::holds_alternative<Waiting>(message->state)) {
@@ -49,9 +48,8 @@ EditResult RelicEditQueue::submit(RelicEditRequest request, std::chrono::millise
         const auto now = std::chrono::steady_clock::now();
         if (now >= deadline) {
             current_.reset();
-            return EditRejected{
-                EditRejectReason::EquipUnavailable,
-                "The relic update timed out before it started. No effects were changed. See ern-relics.log for details."};
+            return EditRejected{EditRejectReason::EquipUnavailable,
+                                "遗物更新在开始前超时，未修改任何词条。详情见 ern-relics.log。"};
         }
         changed_.wait_until(lock, std::min(deadline, now + std::chrono::milliseconds(25)),
                             [&] { return !std::holds_alternative<Waiting>(message->state); });

@@ -93,7 +93,7 @@ void EditorApplication::run(std::stop_token stop) {
         }
     } catch (const std::exception &error) {
         log(std::string("Application worker stopped: ") + error.what());
-        publish(std::string("The editor stopped: ") + error.what());
+        publish(std::string("编辑器已停止：") + error.what());
     }
     phase_.store(Phase::Stopped);
     log_.flush();
@@ -110,17 +110,15 @@ EditorOutcome EditorApplication::execute(const Request &request) {
         const auto *current = equipped();
         const auto observed = current ? std::optional{*current} : std::nullopt;
         if (request.session != runtime_.session() || observed != request.equipped)
-            return EditRejected{
-                EditRejectReason::Stale,
-                "The character or equipped relics changed. Review the refreshed state."};
+            return EditRejected{EditRejectReason::Stale,
+                                "角色或已装备遗物已变化，请检查刷新后的状态。"};
         const bool draft_bound = std::holds_alternative<SetEffect>(request.action) ||
                                  std::holds_alternative<ReloadSlot>(request.action) ||
                                  std::holds_alternative<DiscardDrafts>(request.action) ||
                                  std::holds_alternative<ApplyDrafts>(request.action) ||
                                  std::holds_alternative<LoadPreset>(request.action);
         if (draft_bound && runtime_.editor().drafts() != request.drafts)
-            return EditRejected{EditRejectReason::Stale,
-                                "Drafts changed. Review them before applying."};
+            return EditRejected{EditRejectReason::Stale, "草稿已变化，应用前请先检查。"};
     }
     return std::visit([this](const auto &action) { return handle(action); }, request.action);
 }
@@ -175,15 +173,13 @@ EditorOutcome EditorApplication::handle(const ReloadPresets &) {
 }
 EditorOutcome EditorApplication::handle(const SavePreset &action) {
     if (!equipped() || !runtime_.editing_supported())
-        return EditRejected{EditRejectReason::Unreadable,
-                            "Equipped relics are unavailable for saving."};
+        return EditRejected{EditRejectReason::Unreadable, "已装备遗物不可用，无法保存。"};
     const auto preset = capture_preset(*equipped(), runtime_.validator(), runtime_.rule_context());
     const auto count =
         static_cast<std::size_t>(std::count_if(preset.slots.begin(), preset.slots.end(),
                                                [](const auto &slot) { return slot.has_value(); }));
     if (!count)
-        return EditRejected{EditRejectReason::Locked,
-                            "No obtainable relics are equipped. Nothing was saved."};
+        return EditRejected{EditRejectReason::Locked, "未装备可获取的遗物，未保存任何内容。"};
     if (const auto error = store_.save(action.name, preset, action.mode)) {
         if (*error == PresetStoreError::AlreadyExists)
             reload_presets();
@@ -200,8 +196,7 @@ EditorOutcome EditorApplication::handle(const DeletePreset &action) {
 }
 EditorOutcome EditorApplication::handle(const LoadPreset &action) {
     if (!equipped() || !runtime_.editing_supported())
-        return EditRejected{EditRejectReason::Unreadable,
-                            "Equipped relics are unavailable for staging."};
+        return EditRejected{EditRejectReason::Unreadable, "已装备遗物不可用，无法载入。"};
     const auto count = static_cast<std::size_t>(
         std::count_if(action.preset.slots.begin(), action.preset.slots.end(),
                       [](const auto &slot) { return slot.has_value(); }));

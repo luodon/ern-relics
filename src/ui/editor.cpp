@@ -45,14 +45,14 @@ void change_tooltip(const EditorView &rt, const Appearance &appearance, const Dr
     ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetFontSize() * 28);
     const auto describe = [&](EffectPosition position, std::uint32_t id) {
         return position.field == EffectField::Curse && id == UINT32_MAX
-                   ? std::string("No curse")
+                   ? std::string("无诅咒")
                    : rt.presentation().describe(id);
     };
     if (selected) {
         change_value(describe(*selected, effect_at(draft.original.effects, *selected)),
                      describe(*selected, effect_at(draft.effects, *selected)));
     } else {
-        ImGui::TextUnformatted("Relic changes");
+        ImGui::TextUnformatted("遗物更改");
         bool first = true;
         for (std::size_t row = 0; row < effects_per_relic; ++row) {
             const bool effect_changed =
@@ -65,7 +65,7 @@ void change_tooltip(const EditorView &rt, const Appearance &appearance, const Dr
                 ImGui::Separator();
             first = false;
             ImGui::Spacing();
-            ImGui::TextUnformatted(("Effect " + std::to_string(row + 1)).c_str());
+            ImGui::TextUnformatted(("词条 " + std::to_string(row + 1)).c_str());
             if (effect_changed)
                 change_value(
                     describe({row, EffectField::Effect}, draft.original.effects.rows[row].effect),
@@ -74,7 +74,7 @@ void change_tooltip(const EditorView &rt, const Appearance &appearance, const Dr
                 ImGui::TextUnformatted(
                     describe({row, EffectField::Effect}, draft.effects.rows[row].effect).c_str());
             if (curse_changed) {
-                ImGui::TextColored(muted, "Curse");
+                ImGui::TextColored(muted, "诅咒");
                 change_value(
                     describe({row, EffectField::Curse}, draft.original.effects.rows[row].curse),
                     describe({row, EffectField::Curse}, draft.effects.rows[row].curse));
@@ -128,7 +128,7 @@ void relic_tiles(const EditorView &rt, EditorState &state, const Appearance &app
             if (i >= effects_per_relic) {
                 const auto id = tile.effects->rows[effect].curse;
                 tile.rows[effect].curse_label =
-                    id == UINT32_MAX ? "No curse" : rt.presentation().describe(id);
+                    id == UINT32_MAX ? "无诅咒" : rt.presentation().describe(id);
                 tile.rows[effect].curse_height =
                     std::max(appearance.space(4), ImGui::GetFontSize());
                 tile_height += tile.rows[effect].curse_height;
@@ -174,18 +174,17 @@ void relic_tiles(const EditorView &rt, EditorState &state, const Appearance &app
         const auto &tile = tiles[i];
         const auto *info = tile.info;
         const bool locked = relic && relic_lock_reason(info);
-        const auto slot_label = "Slot " + std::to_string(i + 1);
+        const auto slot_label = "槽位 " + std::to_string(i + 1);
         const auto image_pos =
             ImVec2(position.x + appearance.space(2), position.y + appearance.space(2));
         const auto name = info    ? rt.presentation().name(info)
-                          : relic ? std::string("Unrecognized relic")
-                                  : std::string("Empty slot");
+                          : relic ? std::string("未识别的遗物")
+                                  : std::string("空槽位");
         const auto changes =
             rt.editing_supported() && rt.drafts[i] ? changed_effect_count(*rt.drafts[i]) : 0;
-        const auto tag = locked ? std::string("Read only")
-                         : changes
-                             ? std::to_string(changes) + (changes == 1 ? " change" : " changes")
-                             : std::string{};
+        const auto tag = locked    ? std::string("只读")
+                         : changes ? std::to_string(changes) + " 处更改"
+                                   : std::string{};
         const float tag_width =
             tag.empty() ? 0 : appearance.badge_size(tag.c_str()).x + appearance.space(2);
         const auto displayed_name =
@@ -300,14 +299,13 @@ void effect_field(const EditorView &rt, EditorState &state, const Appearance &ap
     ImGui::BeginDisabled(index.row >= static_cast<std::size_t>(count));
     const auto describe = [&](auto id) {
         return index.field == EffectField::Curse && id == UINT32_MAX
-                   ? std::string("No curse")
+                   ? std::string("无诅咒")
                    : rt.presentation().describe(id);
     };
     const auto label = describe(effect_at(draft.effects, index));
     const auto position = ImGui::GetCursorScreenPos();
     const float width = ImGui::GetContentRegionAvail().x;
-    const float badge_width =
-        changed ? appearance.badge_size("Changed").x + appearance.space(2) : 0;
+    const float badge_width = changed ? appearance.badge_size("已更改").x + appearance.space(2) : 0;
     const ImVec4 text_clip{position.x + appearance.space(9), position.y,
                            position.x + width - appearance.space(2) - badge_width,
                            position.y + appearance.space(9)};
@@ -331,7 +329,7 @@ void effect_field(const EditorView &rt, EditorState &state, const Appearance &ap
                                                                                          : ice),
                       displayed.c_str(), nullptr, 0, &text_clip);
     if (changed) {
-        if (appearance.trailing_badge("Changed", {position.x, position.y, width, height}, amber))
+        if (appearance.trailing_badge("已更改", {position.x, position.y, width, height}, amber))
             change_tooltip(rt, appearance, draft, index);
     } else if (displayed != label && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) &&
                ImGui::IsMouseHoveringRect(
@@ -355,23 +353,23 @@ void effect_browser(const EditorView &rt, std::optional<EditorAction> &action, E
                       {0, std::max(appearance.space(52), ImGui::GetContentRegionAvail().y)},
                       ImGuiChildFlags_Borders);
     const float toggle_width =
-        deep ? ImGui::CalcTextSize("No curse").x + ImGui::GetStyle().FramePadding.x * 2
+        deep ? ImGui::CalcTextSize("无诅咒").x + ImGui::GetStyle().FramePadding.x * 2
              : ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x +
-                   ImGui::CalcTextSize("Show unavailable choices").x;
+                   ImGui::CalcTextSize("显示不可用选项").x;
     ImGui::SetNextItemWidth(std::max(appearance.space(25), ImGui::GetContentRegionAvail().x -
                                                                toggle_width - appearance.space(2)));
-    if (ImGui::InputTextWithHint("##search", curses ? "Search curses..." : "Search effects...",
+    if (ImGui::InputTextWithHint("##search", curses ? "搜索诅咒…" : "搜索词条…",
                                  state.effect_filter.InputBuf,
                                  sizeof(state.effect_filter.InputBuf)))
         state.effect_filter.Build();
     if (!deep) {
         ImGui::SameLine(0, appearance.space(2));
-        checkbox("Show unavailable choices", &state.show_unavailable);
+        checkbox("显示不可用选项", &state.show_unavailable);
     }
     if (deep) {
         ImGui::SameLine(0, appearance.space(2));
         ImGui::BeginDisabled(!choices->can_clear || effect_at(draft.effects, index) == UINT32_MAX);
-        if (button("No curse", {toggle_width, 0})) {
+        if (button("无诅咒", {toggle_width, 0})) {
             action = SetEffect{state.selected, index, UINT32_MAX};
             state.status = {};
         }
@@ -390,7 +388,7 @@ void effect_browser(const EditorView &rt, std::optional<EditorAction> &action, E
         return sidebar_item(label, selected,
                             {ImGui::GetContentRegionAvail().x, appearance.space(8)});
     };
-    if (group_button(curses ? "All curses" : "All effects", !state.group_filter))
+    if (group_button(curses ? "全部诅咒" : "全部词条", !state.group_filter))
         state.group_filter.reset();
     for (const auto group : effect_groups)
         if (group_button(effect_group_name(group), state.group_filter == group))
@@ -456,16 +454,15 @@ void effect_browser(const EditorView &rt, std::optional<EditorAction> &action, E
             }
             ImGui::EndDisabled();
             if (tag_hovered)
-                effect_tooltip(appearance, available ? "Choose a curse in the paired row."
+                effect_tooltip(appearance, available ? "请在配对行中选择一个诅咒。"
                                                      : validation_reason(choice.validation));
             ImGui::PopID();
         }
     }
     if (!previous_group) {
         const bool filtered = state.group_filter || state.effect_filter.IsActive();
-        empty_state(appearance, curses ? "No matching curses" : "No matching effects",
-                    filtered ? "Try another search or category."
-                             : "No compatible replacements are available.");
+        empty_state(appearance, curses ? "没有匹配的诅咒" : "没有匹配的词条",
+                    filtered ? "请尝试其他搜索词或分类。" : "没有可用的兼容替换词条。");
     }
     ImGui::EndChild();
     ImGui::EndChild();
@@ -485,7 +482,7 @@ bool detail(const EditorView &rt, std::optional<EditorAction> &action, EditorSta
         ImGui::BeginChild("equipped-effects", {0, 0},
                           ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY,
                           ImGuiWindowFlags_NoScrollWithMouse);
-        heading("Equipped effects", appearance.name_font);
+        heading("已装备词条", appearance.name_font);
         if (reason)
             notice({reason, muted});
         vertical_gap(appearance.space(2));
@@ -517,10 +514,10 @@ bool detail(const EditorView &rt, std::optional<EditorAction> &action, EditorSta
                 ImGui::TableSetupColumn("Curse", ImGuiTableColumnFlags_WidthStretch, 1.f);
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            ImGui::TextColored(muted, "Effects");
+            ImGui::TextColored(muted, "词条");
             if (deep) {
                 ImGui::TableSetColumnIndex(1);
-                ImGui::TextColored(muted, "Paired curses");
+                ImGui::TextColored(muted, "配对诅咒");
             }
             for (std::size_t i = 0; i < effects_per_relic; ++i) {
                 ImGui::TableNextRow();
@@ -565,23 +562,23 @@ void draft_footer(const EditorView &rt, std::optional<EditorAction> &action, Edi
         ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - undo_width - discard_width -
                                     apply_width - ImGui::GetStyle().ItemSpacing.x * 2));
     ImGui::BeginDisabled(!rt.can_undo || !rt.editing_supported() || pending);
-    if (button("Undo", {undo_width, 0})) {
+    if (button("撤销", {undo_width, 0})) {
         action = UndoEdit{};
         state.status = {};
     }
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        ImGui::SetTooltip("Restore every relic changed by the last Apply changes.");
+        ImGui::SetTooltip("恢复上一次“应用更改”改动的所有遗物。");
     ImGui::SameLine();
     ImGui::BeginDisabled(!pending);
-    if (button("Discard changes", {discard_width, 0})) {
+    if (button("放弃更改", {discard_width, 0})) {
         action = DiscardDrafts{};
         state.status = {};
     }
     ImGui::EndDisabled();
     ImGui::SameLine();
     ImGui::BeginDisabled(!rt.editing_supported() || !feedback.error.empty() || !pending);
-    if (primary_button("Apply changes", {apply_width, 0})) {
+    if (primary_button("应用更改", {apply_width, 0})) {
         state.applied_focus =
             rt.drafts[state.selected]
                 ? effect_at(rt.drafts[state.selected]->effects, state.selected_effect)
@@ -637,12 +634,11 @@ void draw_editor(const EditorView &rt, std::optional<EditorAction> &action, Edit
             if (equipped->slots[state.selected])
                 detail(rt, action, state, appearance, *equipped->slots[state.selected]);
             else
-                empty_state(appearance, "No relic equipped", "Equip a relic through Relic Rites.");
+                empty_state(appearance, "未装备遗物", "请通过遗物仪式装备遗物。");
         }
     } else
         empty_state(appearance,
-                    rt.location == EditLocation::NotLoaded ? "Character not loaded"
-                                                           : "Relics unavailable",
+                    rt.location == EditLocation::NotLoaded ? "角色未加载" : "遗物不可用",
                     std::get<InspectionMessage>(rt.inspection).text.c_str());
     ImGui::EndChild();
     ImGui::SetCursorPosY(footer_y);
