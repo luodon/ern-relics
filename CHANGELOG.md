@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/luodon/ern-relics/compare/v1.1.0...v1.1.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* match test assertions to localized diagnostics ([b98d50e](https://github.com/luodon/ern-relics/commit/b98d50ea20feb4a2a4db15bf327d81e862836f38))
+
 ## [1.1.0](https://github.com/luodon/ern-relics/compare/v1.0.2...v1.1.0) (2026-11-17)
 
 
